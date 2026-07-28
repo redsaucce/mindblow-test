@@ -1,6 +1,6 @@
 "use client";
 
-import { FileQuestion, Send } from "lucide-react";
+import { Brain } from "lucide-react";
 import Newsletter from "@/components/landing/newsletter/newsletter";
 import { footer as copy } from "@/data/layout/footer";
 import { useModal } from "@/hooks/use-modal";
@@ -23,7 +23,7 @@ export default function Footer({ showNewsletter = false }: FooterProps) {
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center">
-                <FileQuestion className="w-4 h-4 text-white" strokeWidth={2.2} />
+                <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
               </div>
               <span className="font-heading text-white/90 font-bold text-lg">
                 {copy.brand.name}

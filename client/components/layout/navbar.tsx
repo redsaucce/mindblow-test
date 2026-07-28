@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FileQuestion, ExternalLink, X, Menu } from "lucide-react";
+import { Brain, ExternalLink, X, Menu } from "lucide-react";
 import { navbar as copy } from "@/data/layout/navbar";
 import { useModal } from "@/hooks/use-modal";
 import { useToggle } from "@/hooks/use-toggle";
@@ -132,7 +132,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20 md:shadow-lg md:shadow-emerald-600/30">
-              <FileQuestion className="w-4 h-4 text-white" strokeWidth={2.2} />
+              <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
             </div>
             <span className="font-heading font-bold text-lg text-slate-700">
               {copy.brand}
@@ -186,7 +186,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20">
-                <FileQuestion className="w-4 h-4 text-white" strokeWidth={2.2} />
+                <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
               </div>
               <span className="font-heading font-bold text-lg text-slate-700">
                 {copy.brand}
