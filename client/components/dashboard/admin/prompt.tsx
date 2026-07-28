@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { promptPageContent as copy } from "@/data/dashboard/admin/prompt";
-import { type PromptFields, getPrompt, updatePrompt } from "@/services/admin-prompt-service";
+import { type PromptFields, getPrompt, updatePrompt } from "@/services/dashboard/admin-prompt-service";
 
 const EMPTY_PROMPT: PromptFields = {
   prefix: "",

@@ -7,7 +7,7 @@ import { ChevronUp, LogOut } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
 import { useToggle } from "@/hooks/use-toggle";
-import { getMe, logout } from "@/services/auth-service";
+import { getMe, logout } from "@/services/public/auth-service";
 
 interface SidebarProps {
   open: boolean;

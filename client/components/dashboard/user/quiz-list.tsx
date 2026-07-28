@@ -10,8 +10,8 @@ import EmptyState from "@/components/ui/empty-state";
 import { useAutoScrollHeight } from "@/hooks/use-auto-scroll-height";
 import { quizListContent as copy } from "@/data/dashboard/user/quiz-list";
 import { emptyStates } from "@/data/ui/empty-states";
-import { type Quiz, listQuizzes, deleteQuiz as deleteQuizRequest } from "@/services/user-quiz-list-service";
-import { downloadQuizzes as downloadQuizzesRequest } from "@/services/quiz-download-service";
+import { type Quiz, listQuizzes, deleteQuiz as deleteQuizRequest } from "@/services/dashboard/user-quiz-list-service";
+import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
 
 type DeleteTarget = { type: "single"; id: string } | { type: "bulk" } | null;
 type DownloadTarget = { ids: string[] } | null;

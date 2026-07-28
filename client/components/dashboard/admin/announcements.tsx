@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Megaphone } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { announcementPageContent as copy } from "@/data/dashboard/admin/announcements";
-import { sendAnnouncement } from "@/services/admin-announcement-service";
+import { sendAnnouncement } from "@/services/dashboard/admin-announcement-service";
 
 export default function AnnouncementsPage() {
   const [title, setTitle] = useState("");

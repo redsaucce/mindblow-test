@@ -14,7 +14,7 @@ import Modal from "@/components/ui/modal";
 import { authModal as copy } from "@/data/modal/auth";
 import { useModal } from "@/hooks/use-modal";
 import { useEmailSubmit } from "@/hooks/use-email-submit";
-import { requestMagicLink, ApiError } from "@/services/auth-service";
+import { requestMagicLink, ApiError } from "@/services/public/auth-service";
 
 type ModalState = "form" | "loading" | "success" | "warning" | "error" | "rate-limit";
 

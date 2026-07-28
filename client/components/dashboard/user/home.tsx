@@ -15,9 +15,9 @@ import { generatePanelContent as copy } from "@/data/dashboard/user/home";
 import {
   generateQuiz as generateQuizRequest,
   type QuizTypeInput,
-} from "@/services/user-quiz-generate-service";
-import { getQuizDetail } from "@/services/user-quiz-list-service";
-import { downloadQuizzes as downloadQuizzesRequest } from "@/services/quiz-download-service";
+} from "@/services/dashboard/user-quiz-generate-service";
+import { getQuizDetail } from "@/services/dashboard/user-quiz-list-service";
+import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
 
 type GenerateStatus = "idle" | "generating" | "success" | "error";
 

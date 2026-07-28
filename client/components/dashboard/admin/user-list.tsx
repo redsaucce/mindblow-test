@@ -7,7 +7,7 @@ import AlertModal from "@/components/ui/alert-modal";
 import { emptyStates } from "@/data/ui/empty-states";
 import { userListContent as copy } from "@/data/dashboard/admin/user-list";
 import type { ColumnDef } from "@tanstack/react-table";
-import { type AdminUser, listUsers, deleteUser as deleteUserRequest } from "@/services/admin-users-service";
+import { type AdminUser, listUsers, deleteUser as deleteUserRequest } from "@/services/dashboard/admin-users-service";
 
 type LoadState = "loading" | "ready" | "error";
 

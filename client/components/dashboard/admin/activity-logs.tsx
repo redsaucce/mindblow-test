@@ -8,7 +8,7 @@ import { emptyStates } from "@/data/ui/empty-states";
 import { activityLogsContent as copy, activityTabs } from "@/data/dashboard/admin/activity-logs";
 import { useToggle } from "@/hooks/use-toggle";
 import { useSetTopbarActions } from "@/hooks/use-topbar-actions";
-import { type ActivityLogEntry, listLogs } from "@/services/admin-logs-service";
+import { type ActivityLogEntry, listLogs } from "@/services/dashboard/admin-logs-service";
 
 type LoadState = "loading" | "ready" | "error";
 

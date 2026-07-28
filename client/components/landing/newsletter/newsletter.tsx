@@ -5,7 +5,7 @@ import SectionHeader from "@/components/ui/section-header";
 import { sectionHeaders } from "@/data/landing/section-headers";
 import { newsletter as copy } from "@/data/landing/newsletter";
 import { useEmailSubmit } from "@/hooks/use-email-submit";
-import { subscribe as subscribeToNewsletter } from "@/services/newsletter-service";
+import { subscribe as subscribeToNewsletter } from "@/services/public/newsletter-service";
 
 type NewsletterState =
   | "idle"

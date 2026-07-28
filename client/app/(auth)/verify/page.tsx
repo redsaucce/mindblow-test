@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, ShieldAlert, type LucideIcon } from "lucide-react";
-import { verifyToken, ApiError } from "@/services/auth-service";
+import { verifyToken, ApiError } from "@/services/public/auth-service";
 
 type VerifyState = "verifying" | "success" | "error";
 

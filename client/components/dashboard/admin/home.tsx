@@ -30,7 +30,7 @@ import {
   type LineChartPoint,
   type DonutChartSlice,
   getStats,
-} from "@/services/admin-home-service";
+} from "@/services/dashboard/admin-home-service";
 
 type LoadState = "loading" | "ready" | "error";
 
