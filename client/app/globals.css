@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-plus-jakarta-sans);
+}
+
+body {
+  font-family: var(--font-dm-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-plus-jakarta-sans);
+}
+
+/* Native scrollbar hidden — components/ui/scroll-bar.tsx renders a custom one */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-gutter: stable;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* Reusable on any inner scrollable container that pairs with ScrollBar's
+   containerRef mode — same hiding treatment as html above, scoped down. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
