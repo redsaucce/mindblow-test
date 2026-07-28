@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 24 * 7  # 7 days, adjust as needed
 
     cookie_name: str = "mb_session"
-    cookie_secure: bool = False  # True in production
-    cookie_samesite: str = "lax"
+    cookie_secure: bool = True  # True in production
+    cookie_samesite: str = "none"
     refresh_cookie_name: str = "mb_refresh"
     refresh_token_expire_days: int = 7
 
