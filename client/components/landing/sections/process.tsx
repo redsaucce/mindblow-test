@@ -10,7 +10,6 @@ export default function Process() {
         <div className="mb-20">
           <SectionHeader
             variant={content.variant}
-            prefix={content.prefix}
             title={content.title}
             subtitle={content.subtitle}
           />

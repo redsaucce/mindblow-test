@@ -11,7 +11,6 @@ export default function Features() {
         <div className="mb-16">
           <SectionHeader
             variant={content.variant}
-            prefix={content.prefix}
             title={content.title}
             subtitle={content.subtitle}
           />
