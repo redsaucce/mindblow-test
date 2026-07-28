@@ -73,3 +73,11 @@ async def logout(request: Request, response: Response, db: AsyncSession = Depend
     clear_session_cookie(response)
     clear_refresh_cookie(response)
     return LogoutResponse(message="Logged out.")
+
+@router.get("/me", response_model=MeResponse)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return MeResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        role=current_user.role,
+    )
