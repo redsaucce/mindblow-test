@@ -23,7 +23,7 @@ function AccordionItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="border-b border-slate-200 px-6">
+    <div className="border-b border-slate-200 md:px-6">
       <button
         onClick={onToggle}
         className="w-full group flex items-center justify-between gap-4 py-4 text-left bg-white transition-colors"
