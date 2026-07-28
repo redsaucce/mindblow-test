@@ -2,8 +2,8 @@
 
 import { Loader2, Send } from "lucide-react";
 import SectionHeader from "@/components/ui/section-header";
-import { sectionHeaders } from "@/data/landing/section-headers";
-import { newsletter as copy } from "@/data/landing/newsletter";
+import { sectionHeaders } from "@/data/public/section-headers";
+import { newsletter as copy } from "@/data/public/newsletter";
 import { useEmailSubmit } from "@/hooks/use-email-submit";
 import { subscribe as subscribeToNewsletter } from "@/services/public/newsletter-service";
 

@@ -1,6 +1,6 @@
 import SectionHeader from "@/components/ui/section-header";
-import { sectionHeaders } from "@/data/landing/section-headers";
-import { features } from "@/data/landing/features";
+import { sectionHeaders } from "@/data/public/section-headers";
+import { features } from "@/data/public/features";
 
 export default function Features() {
   const content = sectionHeaders.features;

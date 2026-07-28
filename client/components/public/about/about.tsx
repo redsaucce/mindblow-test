@@ -7,7 +7,7 @@ import {
   aboutHero,
   aboutMedia,
   storyToggleLabels,
-} from "@/data/landing/about";
+} from "@/data/public/about";
 import { useToggle } from "@/hooks/use-toggle";
 
 function Storyline() {

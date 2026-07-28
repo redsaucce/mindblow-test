@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Accordion from "@/components/ui/accordion";
 import SectionHeader from "@/components/ui/section-header";
-import { faqsHeader, faqs } from "@/data/landing/faqs";
+import { faqsHeader, faqs } from "@/data/public/faqs";
 
 export default function Faqs() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);

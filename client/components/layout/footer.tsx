@@ -1,7 +1,7 @@
 "use client";
 
 import { Brain } from "lucide-react";
-import Newsletter from "@/components/landing/newsletter/newsletter";
+import Newsletter from "@/components/public/newsletter/newsletter";
 import { footer as copy } from "@/data/layout/footer";
 import { useModal } from "@/hooks/use-modal";
 

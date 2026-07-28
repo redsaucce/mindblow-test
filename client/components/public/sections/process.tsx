@@ -1,5 +1,5 @@
 import SectionHeader from "@/components/ui/section-header";
-import { processHeader, steps } from "@/data/landing/process";
+import { processHeader, steps } from "@/data/public/process";
 
 export default function Process() {
   const content = processHeader;

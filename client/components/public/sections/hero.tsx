@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, ChevronDown, ArrowDown } from "lucide-react";
-import { heroContent } from "@/data/landing/hero";
+import { heroContent } from "@/data/public/hero";
 import { useModal } from "@/hooks/use-modal";
 
 function ProcessIllustration() {

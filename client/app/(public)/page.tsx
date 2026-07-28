@@ -1,8 +1,8 @@
-import Hero from "@/components/landing/sections/hero";
-import Features from "@/components/landing/sections/features";
-import Process from "@/components/landing/sections/process";
-import Pricing from "@/components/landing/sections/pricing";
-import Faqs from "@/components/landing/sections/faqs";
+import Hero from "@/components/public/sections/hero";
+import Features from "@/components/public/sections/features";
+import Process from "@/components/public/sections/process";
+import Pricing from "@/components/public/sections/pricing";
+import Faqs from "@/components/public/sections/faqs";
 import ScrollBar from "@/components/ui/scroll-bar";
 
 export default function LandingPage() {

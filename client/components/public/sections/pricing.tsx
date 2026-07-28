@@ -2,7 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import SectionHeader from "@/components/ui/section-header";
-import { pricingHeader, pricingCta } from "@/data/landing/pricing";
+import { pricingHeader, pricingCta } from "@/data/public/pricing";
 import { useModal } from "@/hooks/use-modal";
 
 export default function Pricing() {
