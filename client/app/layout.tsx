@@ -13,8 +13,29 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mindblow-test.vercel.app"),
   title: "MindBlow",
   description: "AI quiz generator",
+  openGraph: {
+    title: "MindBlow",
+    description: "AI quiz generator",
+    url: "https://mindblow-test.vercel.app/",
+    siteName: "MindBlow",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MindBlow",
+    description: "AI quiz generator",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
