@@ -1,13 +1,11 @@
 export const sectionHeaders = {
   features: {
     variant: "green",
-    prefix: "Everything You Need",
     title: "Study Smarter, Not Harder",
     subtitle: "Turn your study material into ready-to-practice quizzes.",
   },
   process: {
     variant: "green",
-    prefix: "Simple Process",
     title: "From Upload to Quiz in 3 Steps",
     subtitle: "No setup, no tutorials — just results.",
   },
