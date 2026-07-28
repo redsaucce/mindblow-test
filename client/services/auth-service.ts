@@ -13,6 +13,10 @@ export interface VerifyResponse {
   role: "user" | "admin";
 }
 
+export interface RefreshResponse {
+  role: "user" | "admin";
+}
+
 export interface LogoutResponse {
   message: string;
 }
@@ -35,6 +39,10 @@ export async function requestMagicLink(
 
 export async function verifyToken(token: string): Promise<VerifyResponse> {
   return apiClient.get<VerifyResponse>(`/auth/verify?token=${encodeURIComponent(token)}`);
+}
+
+export async function refreshSession(): Promise<RefreshResponse> {
+  return apiClient.post<RefreshResponse>("/auth/refresh");
 }
 
 export async function logout(): Promise<LogoutResponse> {

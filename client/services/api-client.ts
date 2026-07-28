@@ -11,9 +11,27 @@ export class ApiError extends Error {
   }
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefresh(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetry = false
 ): Promise<T> {
   const isFormData = options.body instanceof FormData;
 
@@ -26,6 +44,13 @@ async function request<T>(
     credentials: "include",
     headers,
   });
+
+  if (response.status === 401 && !isRetry && path !== "/auth/refresh") {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      return request<T>(path, options, true);
+    }
+  }
 
   if (!response.ok) {
     let detail = "Something went wrong. Please try again.";
