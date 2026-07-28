@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronUp, LogOut } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
 import { useToggle } from "@/hooks/use-toggle";
-import { logout } from "@/services/auth-service";
+import { getMe, logout } from "@/services/auth-service";
 
 interface SidebarProps {
   open: boolean;
@@ -19,7 +19,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const router = useRouter();
   const role: "user" | "admin" = pathname.startsWith("/admin") ? "admin" : "user";
   const links = sidebarLinks[role];
-  const email = role === "user" ? sidebarAccount.userEmail : sidebarAccount.adminEmail;
+
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMe()
+      .then((me) => {
+        if (!cancelled) setEmail(me.email);
+      })
+      .catch(() => {
+        // Silently keep null — falls back to a static placeholder below
+        // rather than showing an error in the sidebar over something this minor.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayEmail = email ?? (role === "user" ? sidebarAccount.userEmail : sidebarAccount.adminEmail);
 
   const {
     value: accountOpen,
@@ -106,10 +124,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-semibold text-sm flex items-center justify-center shrink-0">
-                  {email.charAt(0).toUpperCase()}
+                  {displayEmail.charAt(0).toUpperCase()}
                 </div>
                 {role === "user" ? (
-                  <span className="text-sm text-slate-600 truncate">{email}</span>
+                  <span className="text-sm text-slate-600 truncate">{displayEmail}</span>
                 ) : (
                   <span className="text-sm font-medium text-slate-900">
                     {sidebarAccount.adminLabel}
@@ -122,7 +140,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             {accountOpen && (
               <div className="absolute bottom-full left-2 right-2 mb-2 rounded-2xl border border-slate-100 bg-white shadow-xl overflow-hidden">
                 <div className="px-4 py-2 text-xs text-slate-400 truncate border-b border-slate-100">
-                  {email}
+                  {displayEmail}
                 </div>
                 <button
                   onClick={handleLogoutClick}
