@@ -6,28 +6,59 @@ export const config = {
   matcher: ["/", "/user/:path*", "/admin/:path*"],
 };
 
+async function checkAuth(
+  cookieHeader: string
+): Promise<{ isAuthenticated: boolean; role: "user" | "admin" | null }> {
+  try {
+    const meResponse = await fetch(`${API_URL}/auth/me`, {
+      headers: { cookie: cookieHeader },
+    });
+    if (meResponse.ok) {
+      const data = await meResponse.json();
+      return { isAuthenticated: true, role: data.role };
+    }
+    return { isAuthenticated: false, role: null };
+  } catch {
+    return { isAuthenticated: false, role: null };
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtectedRoute = pathname.startsWith("/user") || pathname.startsWith("/admin");
+  const cookieHeader = request.headers.get("cookie") ?? "";
 
   let isAuthenticated = false;
   let role: "user" | "admin" | null = null;
+  let response = NextResponse.next();
 
   if (API_URL) {
-    try {
-      const meResponse = await fetch(`${API_URL}/auth/me`, {
-        headers: {
-          cookie: request.headers.get("cookie") ?? "",
-        },
-      });
-      isAuthenticated = meResponse.ok;
-      if (isAuthenticated) {
-        const data = await meResponse.json();
-        role = data.role;
+    const first = await checkAuth(cookieHeader);
+    isAuthenticated = first.isAuthenticated;
+    role = first.role;
+
+    // Access token expired but a refresh token may still be valid — try once
+    // before treating the user as logged out.
+    if (!isAuthenticated) {
+      try {
+        const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { cookie: cookieHeader },
+        });
+
+        if (refreshResponse.ok) {
+          const setCookieHeader = refreshResponse.headers.get("set-cookie");
+          if (setCookieHeader) {
+            response.headers.append("set-cookie", setCookieHeader);
+          }
+
+          const data = await refreshResponse.json();
+          isAuthenticated = true;
+          role = data.role;
+        }
+      } catch {
+        // Refresh attempt failed — fall through, treated as unauthenticated
       }
-    } catch {
-      // Backend unreachable — treat as unauthenticated instead of crashing
-      isAuthenticated = false;
     }
   }
 
@@ -43,5 +74,6 @@ export async function proxy(request: NextRequest) {
   if (isAuthenticated && role === "admin" && pathname.startsWith("/user")) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
-  return NextResponse.next();
+
+  return response;
 }

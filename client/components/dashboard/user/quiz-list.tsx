@@ -7,6 +7,7 @@ import Modal from "@/components/ui/modal";
 import AlertModal from "@/components/ui/alert-modal";
 import ScrollBar from "@/components/ui/scroll-bar";
 import EmptyState from "@/components/ui/empty-state";
+import { useAutoScrollHeight } from "@/hooks/use-auto-scroll-height";
 import { quizListContent as copy } from "@/data/dashboard/user/quiz-list";
 import { emptyStates } from "@/data/ui/empty-states";
 import { type Quiz, listQuizzes, deleteQuiz as deleteQuizRequest } from "@/services/user-quiz-list-service";
@@ -39,6 +40,9 @@ export default function QuizList() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
+  const { containerRef: autoHeightRef, maxHeight } = useAutoScrollHeight({
+    recomputeKey: loadState,
+  });
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
@@ -210,7 +214,7 @@ export default function QuizList() {
         )}
 
         {loadState === "loading" ? (
-          <div className="h-[500px] flex flex-col items-center justify-center">
+          <div className="py-20 flex flex-col items-center justify-center">
             <EmptyState
               icon={ScrollText}
               title={emptyStates.quizList.title}
@@ -218,7 +222,7 @@ export default function QuizList() {
             />
           </div>
         ) : loadState === "error" ? (
-          <div className="h-[500px] flex flex-col items-center justify-center">
+          <div className="py-20 flex flex-col items-center justify-center">
             <EmptyState
               icon={FileX}
               title="Something went wrong"
@@ -226,7 +230,7 @@ export default function QuizList() {
             />
           </div>
         ) : quizzes.length === 0 ? (
-          <div className="h-[500px] flex flex-col items-center justify-center">
+          <div className="py-20 flex flex-col items-center justify-center">
             <EmptyState
               icon={FileX}
               title={emptyStates.quizList.title}
@@ -240,8 +244,12 @@ export default function QuizList() {
         ) : (
           <div className="relative">
             <div
-              ref={scrollContainerRef}
-              className="no-scrollbar h-[500px] overflow-y-auto"
+              ref={(el) => {
+                scrollContainerRef.current = el;
+                autoHeightRef.current = el;
+              }}
+              className="no-scrollbar overflow-y-auto"
+              style={{ maxHeight: maxHeight ?? undefined }}
             >
               {quizzes.map((quiz) => (
                 <div
