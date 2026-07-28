@@ -4,6 +4,7 @@ export interface LegalSection {
 }
 
 export interface LegalContentItem {
+  title?: string;
   sections: LegalSection[];
 }
 
