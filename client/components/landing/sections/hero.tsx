@@ -22,7 +22,7 @@ function ProcessIllustration() {
                   }`}
                 >
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-lg ${
                       isProcessing
                         ? "bg-white text-emerald-700 shadow-emerald-900/20"
                         : `bg-gradient-to-br ${item.tone} text-white shadow-emerald-500/20`
