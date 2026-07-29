@@ -12,21 +12,11 @@ interface UseAutoPageSizeOptions {
   /** Reset to page 0 whenever this changes — e.g. a filter/tab value. */
   resetKey?: unknown;
   /**
-   * Re-measure available space whenever this changes — e.g. the loaded
-   * data's length. This is also what triggers the FIRST real measurement:
-   * on mount, before an async fetch resolves, the table shows an empty
-   * or loading state (not real rows), so measuring then would produce a
-   * bogus, usually-too-large fit count. Pass something that changes once
-   * real data has rendered (e.g. `data.length`) so the first measurement
-   * reflects the actual table.
-   */
-  remeasureKey?: unknown;
-  /**
-   * Called whenever the fitted row count changes (initial measure, resize,
-   * or remeasureKey change). Used by server/manual-pagination callers to
-   * know how many rows to request per page, since in that mode DataTable
-   * can't just re-slice already-loaded data — it has to ask the server
-   * for the right amount up front.
+   * Called with the fitted row count once measured (mount) and whenever
+   * it changes (resize). Used by server/manual-pagination callers to know
+   * how many rows to request per page, since in that mode DataTable can't
+   * just re-slice already-loaded data — it has to ask the server for the
+   * right amount up front, before the first fetch even happens.
    */
   onFitChange?: (rowsThatFit: number) => void;
 }
@@ -43,6 +33,15 @@ interface UseAutoPageSizeOptions {
  * — those guesses drift out of sync whenever a page's chrome changes.
  * theadHeight/bottomPadding are the only two constants used here, and
  * both are exact Tailwind values, not guesses.
+ *
+ * The fitted count itself is never a hardcoded/guessed number. The very
+ * first measurement runs against a fixed one-row skeleton (rendered by
+ * DataTable before any data or fetch exists), so it reflects real
+ * available space from the start — not a previous guess, and not the
+ * table's own current row count (which would be self-referential: the
+ * table's height depends on how many rows are in it, so measuring against
+ * whatever's currently rendered never reliably converges on "exactly
+ * fills the viewport").
  */
 export function useAutoPageSize({
   rowHeight,
@@ -50,19 +49,21 @@ export function useAutoPageSize({
   bottomPadding = 24,
   fadeMs = 120,
   resetKey,
-  remeasureKey,
   onFitChange,
 }: UseAutoPageSizeOptions) {
   const tableRef = useRef<HTMLTableElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 9 });
+  const [pagination, setPagination] = useState<{ pageIndex: number; pageSize: number | null }>({
+    pageIndex: 0,
+    pageSize: null,
+  });
   const [isFading, setIsFading] = useState(false);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Mirrors pagination.pageSize so the resize handler can compare against
   // it without going through setPagination's functional form (which can't
   // cleanly trigger the fade side effect from inside the updater).
-  const pageSizeRef = useRef(pagination.pageSize);
+  const pageSizeRef = useRef<number | null>(null);
 
   const goToPage = (targetIndex: number) => {
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
@@ -97,33 +98,36 @@ export function useAutoPageSize({
     return Math.max(1, Math.floor(available / rowHeight));
   };
 
-  // Re-measure whenever remeasureKey changes (e.g. data finishes loading,
-  // or manual/server pagination needs a fresh fit-to-viewport count).
-  // Runs after paint via rAF so the DOM reflects the just-rendered rows —
-  // measuring synchronously here would still catch the pre-render layout.
+  // Single source of truth for the fitted row count: measured once against
+  // a fixed one-row skeleton that DataTable renders before any data or
+  // fetch exists (see DataTable's `isMeasuring` prop). Because the
+  // skeleton is always exactly one row tall regardless of what `data`
+  // ends up being, tableTop/footerHeight reflect real page chrome, not a
+  // table that's artificially short (loading state) or self-referentially
+  // sized to whatever the previous guess happened to be. This runs once,
+  // then only reacts to window resizes — it does NOT re-run when data
+  // changes, since data length should never influence how much space is
+  // available in the first place.
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       const count = computeCount();
-      if (count === null || count === pageSizeRef.current) return;
+      if (count === null) return;
       pageSizeRef.current = count;
       setPagination((prev) => ({ ...prev, pageSize: count }));
       onFitChange?.(count);
     });
     return () => cancelAnimationFrame(rafId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remeasureKey]);
+  }, []);
 
   useEffect(() => {
     let rafId: number;
 
-    // No initial measurement here on purpose: on mount, before any data
-    // has loaded, the table is rendering its empty/loading state (a short
-    // EmptyState block, not full rows), so measuring immediately produces
-    // a bogus, usually-too-large fit count — which is what caused pages
-    // to request a fixed ~20 rows from the server and overflow into
-    // whole-page scroll. The remeasureKey effect above runs once real
-    // rows exist and reports the first correct measurement instead. This
-    // effect only needs to react to window resizes after that point.
+    // This effect only handles window resizes. The initial measurement
+    // happens in the effect above, once, against the fixed one-row
+    // skeleton DataTable renders before any fetch — never against real
+    // data, so it can't be thrown off by how many rows a previous guess
+    // happened to request.
     const applyResize = () => {
       const count = computeCount();
       if (count === null || count === pageSizeRef.current) return;

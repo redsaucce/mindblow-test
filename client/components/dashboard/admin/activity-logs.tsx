@@ -37,11 +37,11 @@ export default function ActivityLog() {
   const [total, setTotal] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [pageIndex, setPageIndex] = useState(0);
-  // Rows-per-page is driven by how many actually fit the viewport
-  // (reported by DataTable's onPageSizeChange), not a fixed server
-  // default — otherwise an overfull page pushes the footer off-screen
-  // and the whole page scrolls instead of paginating.
-  const [pageSize, setPageSize] = useState(9);
+  // Rows-per-page is driven purely by how many actually fit the viewport
+  // (reported by DataTable's onPageSizeChange once its skeleton measures
+  // real space) — never a guessed default. Starts null; the fetch effect
+  // waits for a real value before requesting anything from the server.
+  const [pageSize, setPageSize] = useState<number | null>(null);
   const {
     value: filterOpen,
     toggle: toggleFilter,
@@ -49,6 +49,7 @@ export default function ActivityLog() {
   } = useToggle(false);
 
   useEffect(() => {
+    if (pageSize === null) return;
     let cancelled = false;
     setLoadState("loading");
     listLogs(activeTab, pageIndex + 1, pageSize)

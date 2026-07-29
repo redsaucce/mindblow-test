@@ -146,20 +146,34 @@ export default function DataTable<T>({
   const auto = useAutoPageSize({
     rowHeight,
     resetKey,
-    remeasureKey: data.length,
     onFitChange: onPageSizeChange,
   });
   const [manualPageIndex, setManualPageIndex] = useState(0);
 
+  // True until the hook's one-time skeleton measurement completes. While
+  // true, we render a single fixed-height placeholder row (not the real
+  // empty/loading state) purely so useAutoPageSize has something stable
+  // and data-independent to measure tableTop/footerHeight against.
+  const isMeasuring = auto.pagination.pageSize === null;
+  const fittedPageSize = auto.pagination.pageSize ?? 1;
+
   const pagination = manualPagination
     ? { pageIndex: manualPageIndex, pageSize: data.length || 1 }
-    : auto.pagination;
+    : { pageIndex: auto.pagination.pageIndex, pageSize: fittedPageSize };
 
   const table = useReactTable({
     data,
     columns,
     state: { pagination },
-    onPaginationChange: manualPagination ? undefined : auto.setPagination,
+    onPaginationChange: manualPagination
+      ? undefined
+      : (updater) => {
+          const next =
+            typeof updater === "function"
+              ? updater({ pageIndex: auto.pagination.pageIndex, pageSize: fittedPageSize })
+              : updater;
+          auto.setPagination((prev) => ({ ...prev, pageIndex: next.pageIndex }));
+        },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -178,7 +192,7 @@ export default function DataTable<T>({
   };
 
   const dataRows = table.getRowModel().rows;
-  const rowsPerPageForSpacer = manualPagination ? data.length : auto.pagination.pageSize;
+  const rowsPerPageForSpacer = manualPagination ? data.length : fittedPageSize;
   const spacerCount = Math.max(0, rowsPerPageForSpacer - dataRows.length);
   const isFading = manualPagination ? false : auto.isFading;
   // Refs are always attached (even in manual mode) so useAutoPageSize can
@@ -222,7 +236,17 @@ export default function DataTable<T>({
               transition: "opacity 120ms ease",
             }}
           >
-            {dataRows.length === 0 ? (
+            {isMeasuring ? (
+              // Fixed one-row skeleton, rendered before any data or fetch
+              // exists. Its only job is to give useAutoPageSize a real,
+              // stable row to measure tableTop/rowHeight against — not
+              // the empty state (too short) and not a guessed row count
+              // (self-referential). Nothing is fetched until this
+              // measurement reports back via onFitChange.
+              <tr style={{ height: `${rowHeight}px` }} aria-hidden="true">
+                <td colSpan={columns.length} className="p-0" />
+              </tr>
+            ) : dataRows.length === 0 ? (
               <>
                 <tr>
                   <td colSpan={columns.length}>
