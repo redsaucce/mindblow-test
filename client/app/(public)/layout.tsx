@@ -12,7 +12,7 @@ export default function LandingLayout({
     <>
       <Navbar />
       {children}
-      <Footer showNewsletter />
+      <Footer />
       <LegalModal />
       <AuthModal />
     </>

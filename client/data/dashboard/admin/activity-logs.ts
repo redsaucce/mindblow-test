@@ -8,7 +8,6 @@ export const activityTabs: ActivityTab[] = [
   { label: "Registered", value: "registered" },
   { label: "Generated", value: "generated" },
   { label: "Downloaded", value: "downloaded" },
-  { label: "Newsletter", value: "newsletter" },
   { label: "Quiz Deleted", value: "quiz_deleted" },
   { label: "User Deleted", value: "user_deleted" },
   { label: "Announcement Sent", value: "announcement_sent" },

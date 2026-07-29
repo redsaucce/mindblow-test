@@ -19,7 +19,6 @@ interface AdminStatsResponse {
   totalUsers: StatData;
   quizzesGenerated: StatData;
   downloadedQuizzes: StatData;
-  newsletterSubscribers: StatData;
   lineChart: LineChartPoint[];
   donutChart: DonutChartSlice[];
 }

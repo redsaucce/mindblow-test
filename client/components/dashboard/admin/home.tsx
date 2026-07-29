@@ -5,7 +5,6 @@ import {
   User,
   FileText,
   Download,
-  Mail,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -216,7 +215,6 @@ export default function Home() {
   const [totalUsers, setTotalUsers] = useState<StatData>(EMPTY_STAT);
   const [quizzesGenerated, setQuizzesGenerated] = useState<StatData>(EMPTY_STAT);
   const [downloadedQuizzes, setDownloadedQuizzes] = useState<StatData>(EMPTY_STAT);
-  const [newsletterSubscribers, setNewsletterSubscribers] = useState<StatData>(EMPTY_STAT);
   const [lineChartData, setLineChartData] = useState<LineChartPoint[]>([]);
   const [donutChartData, setDonutChartData] = useState<DonutChartSlice[]>([]);
 
@@ -229,7 +227,6 @@ export default function Home() {
         setTotalUsers(stats.totalUsers);
         setQuizzesGenerated(stats.quizzesGenerated);
         setDownloadedQuizzes(stats.downloadedQuizzes);
-        setNewsletterSubscribers(stats.newsletterSubscribers);
         setLineChartData(stats.lineChart);
         setDonutChartData(stats.donutChart);
         setLoadState("ready");
@@ -265,13 +262,6 @@ export default function Home() {
       description: copy.stats.downloadedQuizzes.description,
       statData: downloadedQuizzes,
     },
-    {
-      icon: Mail,
-      label: copy.stats.newsletterSubscribers.label,
-      value: newsletterSubscribers.current,
-      description: copy.stats.newsletterSubscribers.description,
-      statData: newsletterSubscribers,
-    },
   ];
 
   if (loadState === "error") {
@@ -286,7 +276,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-stretch">
         {cards.map((card) => (
           <StatCard key={card.label} {...card} />
         ))}

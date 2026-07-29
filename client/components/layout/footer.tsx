@@ -1,22 +1,15 @@
 "use client";
 
 import { Brain } from "lucide-react";
-import Newsletter from "@/components/public/newsletter/newsletter";
 import { footer as copy } from "@/data/layout/footer";
 import { useModal } from "@/hooks/use-modal";
 
-interface FooterProps {
-  showNewsletter?: boolean;
-}
-
-export default function Footer({ showNewsletter = false }: FooterProps) {
+export default function Footer() {
   const { openLegal } = useModal();
 
   return (
     <footer className="bg-green-900 text-slate-300 py-16 px-6">
       <div className="max-w-7xl mx-auto">
-        {showNewsletter ? <Newsletter /> : null}
-
         {/* ── Grid ── */}
         <div className="grid md:grid-cols-3 gap-10 mb-8">
           {/* Brand column */}

@@ -3,10 +3,6 @@ export const adminHomeContent = {
     totalUsers: { label: "TOTAL USERS", description: "Registered accounts" },
     quizzesGenerated: { label: "QUIZZES GENERATED", description: "All time" },
     downloadedQuizzes: { label: "DOWNLOADED QUIZZES", description: "All time" },
-    newsletterSubscribers: {
-      label: "NEWSLETTER SUBSCRIBERS",
-      description: "All time",
-    },
   },
   trend: {
     noPreviousData: "No previous data",

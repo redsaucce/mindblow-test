@@ -4,7 +4,6 @@ export type ActivityType =
   | "registered"
   | "generated"
   | "downloaded"
-  | "newsletter"
   | "quiz_deleted"
   | "user_deleted"
   | "announcement_sent";
