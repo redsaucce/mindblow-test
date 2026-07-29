@@ -12,7 +12,6 @@ export const sidebarLinks: Record<"user" | "admin", SidebarLink[]> = {
     { label: "Overview", href: "/admin" },
     { label: "User Management", href: "/admin/users" },
     { label: "Activity Logs", href: "/admin/logs" },
-    { label: "Send Announcement", href: "/admin/announcements" },
     { label: "Prompt", href: "/admin/prompt" },
   ],
 };

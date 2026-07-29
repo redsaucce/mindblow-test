@@ -2,7 +2,6 @@ import { apiClient, ApiError } from "@/services/api-client";
 
 export interface MagicLinkRequestPayload {
   email: string;
-  optInMarketing: boolean;
 }
 
 export interface MagicLinkResponse {
@@ -27,13 +26,9 @@ export interface MeResponse {
   role: "user" | "admin";
 }
 
-export async function requestMagicLink(
-  email: string,
-  optInMarketing: boolean
-): Promise<MagicLinkResponse> {
+export async function requestMagicLink(email: string): Promise<MagicLinkResponse> {
   return apiClient.post<MagicLinkResponse>("/auth/magic-link", {
     email,
-    optInMarketing,
   });
 }
 

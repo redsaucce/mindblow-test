@@ -10,7 +10,6 @@ export const activityTabs: ActivityTab[] = [
   { label: "Downloaded", value: "downloaded" },
   { label: "Quiz Deleted", value: "quiz_deleted" },
   { label: "User Deleted", value: "user_deleted" },
-  { label: "Announcement Sent", value: "announcement_sent" },
 ];
 
 export const activityLogsContent = {

@@ -12,7 +12,6 @@ export const authModal = {
       invalid: "Enter a valid email.",
     },
   },
-  subscribeLabel: "Send me updates and study tips.",
   submit: {
     idle: "Send Magic Link",
     loading: "Sending...",

@@ -35,7 +35,6 @@ function renderWithEmail(template: string, email: string) {
 export default function AuthModal() {
   const { authOpen, closeAuth } = useModal();
 
-  const [subscribe, setSubscribe] = useState(false);
   const [touched, setTouched] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -55,7 +54,7 @@ export default function AuthModal() {
     // silent no-op here, matching the original behavior.
     onSubmit: async (normalizedEmail) => {
       try {
-        await requestMagicLink(normalizedEmail, subscribe);
+        await requestMagicLink(normalizedEmail);
         setState("success");
       } catch (err) {
         if (err instanceof ApiError && err.status === 429) {
@@ -76,7 +75,6 @@ export default function AuthModal() {
 
   const reset = useCallback(() => {
     resetEmailState();
-    setSubscribe(false);
     setTouched(false);
     setFocused(false);
   }, [resetEmailState]);
@@ -210,18 +208,6 @@ export default function AuthModal() {
                 {emailError || copy.emailField.helper}
               </p>
             </div>
-
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={subscribe}
-                onChange={(e) => setSubscribe(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/30"
-              />
-              <span className="text-xs leading-relaxed text-slate-500">
-                {copy.subscribeLabel}
-              </span>
-            </label>
 
             <button
               type="submit"
