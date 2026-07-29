@@ -36,7 +36,7 @@ router = APIRouter()
 @router.post("/magic-link", response_model=MagicLinkResponse)
 async def send_magic_link(payload: MagicLinkRequest, db: AsyncSession = Depends(get_db)):
     try:
-        await request_magic_link(db, payload.email, payload.optInMarketing)
+        await request_magic_link(db, payload.email)
     except RateLimitedError:
         raise
     except Exception:

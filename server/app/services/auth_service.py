@@ -14,7 +14,7 @@ from app.services.activity_log_service import log_action
 from app.services.mail_service import send_magic_link_email
 
 
-async def request_magic_link(db: AsyncSession, email: str, opt_in_marketing: bool) -> None:
+async def request_magic_link(db: AsyncSession, email: str) -> None:
     normalized_email = email.strip().lower()
 
     result = await db.execute(
@@ -34,7 +34,6 @@ async def request_magic_link(db: AsyncSession, email: str, opt_in_marketing: boo
         user = User(
             email=normalized_email,
             role="user",
-            opted_in_marketing=opt_in_marketing,
         )
         db.add(user)
         await db.flush()

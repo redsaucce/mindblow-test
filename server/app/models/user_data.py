@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Boolean, DateTime
+from sqlalchemy import String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,9 +16,6 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     role: Mapped[str] = mapped_column(String, nullable=False)
-    opted_in_marketing: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )

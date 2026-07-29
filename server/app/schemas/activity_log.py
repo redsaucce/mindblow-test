@@ -9,8 +9,6 @@ ActivityType = Literal[
     "downloaded",
     "quiz_deleted",
     "user_deleted",
-    "announcement_sent",
-    "quiz_generated",
 ]
 
 
