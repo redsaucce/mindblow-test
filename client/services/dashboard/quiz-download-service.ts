@@ -1,7 +1,5 @@
 import { ApiError } from "@/services/api-client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export interface DownloadResult {
   blob: Blob;
   filename: string;
@@ -16,7 +14,7 @@ function extractFilename(contentDisposition: string | null, fallback: string): s
 
 export async function downloadQuizzes(ids: string[]): Promise<DownloadResult> {
   const query = ids.map(encodeURIComponent).join(",");
-  const response = await fetch(`${API_URL}/quizzes/download?ids=${query}`, {
+  const response = await fetch(`/api/quizzes/download?ids=${query}`, {
     credentials: "include",
   });
 
