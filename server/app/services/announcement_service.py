@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.announcement_log import AnnouncementLog
-from app.models.newsletter_subscriber import NewsletterSubscriber
 from app.models.user_data import User
 from app.services.activity_log_service import log_action
 from app.services.mail_service import send_announcement_email
@@ -20,12 +19,7 @@ async def _get_recipient_emails(db: AsyncSession) -> list[str]:
     opted_in_result = await db.execute(
         select(User.email).where(User.opted_in_marketing.is_(True))
     )
-    opted_in_emails = {row[0] for row in opted_in_result.all()}
-
-    subscriber_result = await db.execute(select(NewsletterSubscriber.email))
-    subscriber_emails = {row[0] for row in subscriber_result.all()}
-
-    return list(opted_in_emails | subscriber_emails)
+    return [row[0] for row in opted_in_result.all()]
 
 
 async def send_announcement(

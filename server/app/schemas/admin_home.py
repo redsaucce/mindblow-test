@@ -20,6 +20,5 @@ class AdminStatsResponse(BaseModel):
     totalUsers: StatPair
     quizzesGenerated: StatPair
     downloadedQuizzes: StatPair
-    newsletterSubscribers: StatPair
     lineChart: list[LineChartPoint]
     donutChart: list[DonutChartSlice]

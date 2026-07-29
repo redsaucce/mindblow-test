@@ -68,9 +68,20 @@ export default function ScrollBar({ containerRef }: ScrollBarProps = {}) {
     const scrollTarget: HTMLElement | Window = target ?? window;
     scrollTarget.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (target && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => update());
+      resizeObserver.observe(target);
+      if (target.firstElementChild) {
+        resizeObserver.observe(target.firstElementChild);
+      }
+    }
+
     return () => {
       scrollTarget.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      resizeObserver?.disconnect();
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
     };
   }, [pathname, containerRef]);

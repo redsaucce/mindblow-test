@@ -1,8 +1,6 @@
 export const generatePanelContent = {
   upload: {
-    label: "Upload your PDF or DOCX",
-    hint: "or click to browse files",
-    maxSizeLabel: "Max 10MB",
+    label: "Upload your PDF or DOCX, up to 10MB",
     maxSizeBytes: 10 * 1024 * 1024,
     invalidTypeMessage: "Only PDF or DOCX files are supported.",
     tooLargeMessage: "File is too large — max size is 10MB.",
@@ -36,9 +34,7 @@ export const generatePanelContent = {
   resultModal: {
     title: "Quiz Generated!",
     answerKeyLabel: "Answer Key",
-    captionPrefix: "Showing",
-    captionMiddle: "of",
-    captionSuffix: "questions — download for the full quiz and answer key",
+    downloadPrompt: "Download for the full quiz and answer key",
     generateAnotherLabel: "Generate Another",
     viewQuizzesLabel: "View My Quizzes",
     downloadLabel: "Download Quiz",

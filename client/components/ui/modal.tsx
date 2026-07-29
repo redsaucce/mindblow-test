@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode, type RefObject } from "react";
 import { X } from "lucide-react";
+import ScrollBar from "@/components/ui/scroll-bar";
 
 interface ModalProps {
   open: boolean;
@@ -11,6 +12,24 @@ interface ModalProps {
   panelClassName?: string;
   contentClassName?: string;
   showCloseButton?: boolean;
+  /**
+   * Optional sticky header, rendered above the scrollable body and
+   * outside the scroll container — stays fixed while children scroll.
+   */
+  header?: ReactNode;
+  headerClassName?: string;
+  /**
+   * Optional sticky footer, rendered below the scrollable body and
+   * outside the scroll container — stays fixed while children scroll.
+   */
+  footer?: ReactNode;
+  footerClassName?: string;
+  /**
+   * When provided, the modal's scroll container uses this ref and
+   * renders the custom ScrollBar instead of the browser's native
+   * scrollbar (native scrollbar is hidden via inline style).
+   */
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function Modal({
@@ -21,6 +40,11 @@ export default function Modal({
   panelClassName = "",
   contentClassName = "",
   showCloseButton = true,
+  header,
+  headerClassName = "",
+  footer,
+  footerClassName = "",
+  scrollContainerRef,
 }: ModalProps) {
   // Locks background scroll while open, and caps the panel so only its
   // inner content scrolls if it overflows — same treatment as legal.tsx,
@@ -53,9 +77,28 @@ export default function Modal({
             <X className="h-4 w-4" />
           </button>
         ) : null}
-        <div className={`overflow-y-auto flex-1 ${contentClassName}`}>
+        {header ? (
+          <div className={`flex-shrink-0 ${headerClassName}`}>{header}</div>
+        ) : null}
+        <div
+          ref={scrollContainerRef}
+          className={`overflow-y-auto flex-1 ${
+            scrollContainerRef ? "scrollbar-none" : ""
+          } ${contentClassName}`}
+          style={
+            scrollContainerRef
+              ? { scrollbarWidth: "none", msOverflowStyle: "none" }
+              : undefined
+          }
+        >
           {children}
         </div>
+        {scrollContainerRef ? (
+          <ScrollBar containerRef={scrollContainerRef} />
+        ) : null}
+        {footer ? (
+          <div className={`flex-shrink-0 ${footerClassName}`}>{footer}</div>
+        ) : null}
       </div>
     </div>
   );

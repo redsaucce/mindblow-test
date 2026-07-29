@@ -95,10 +95,21 @@ function QuizResultModal({
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   if (!result) return null;
 
   const previewQuestions = result.questions;
+
+  const handleClose = () => {
+    setDownloadMessage("");
+    onClose();
+  };
+
+  const handleGenerateAnotherClick = () => {
+    setDownloadMessage("");
+    onGenerateAnother();
+  };
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -119,22 +130,68 @@ function QuizResultModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} maxWidthClassName="max-w-2xl" contentClassName="p-6">
-      <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
-        {copy.resultModal.title}
-      </h2>
-      <p className="text-sm text-slate-400 mb-5">
-        {result.documentName} · {result.category} · {result.totalQuestions} questions
-      </p>
-
-      <div className="flex flex-col gap-5">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-slate-900">{result.documentName}</p>
-          <p className="text-xs text-slate-400 mt-1">
-            {result.category} · {result.totalQuestions} questions
+    <Modal
+      open={open}
+      onClose={handleClose}
+      maxWidthClassName="max-w-2xl"
+      contentClassName="px-6 pb-6"
+      scrollContainerRef={scrollContainerRef}
+      header={
+        <div className="px-6 pr-14 pt-6 pb-4 border-b border-slate-100">
+          <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
+            {copy.resultModal.title}
+          </h2>
+          <p className="text-sm text-slate-400">
+            {result.documentName} · {result.category} · {result.totalQuestions} questions
           </p>
         </div>
+      }
+      footer={
+        <div className="px-6 pt-4 pb-6 border-t border-slate-100 flex flex-col gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateAnotherClick}
+              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              {copy.resultModal.generateAnotherLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleViewQuizzes}
+              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              {copy.resultModal.viewQuizzesLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+            >
+              {isDownloading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {copy.resultModal.downloadingLabel}
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  {copy.resultModal.downloadLabel}
+                </>
+              )}
+            </button>
+          </div>
 
+          <p className="text-xs text-slate-400 text-center">
+            {downloadMessage || copy.resultModal.downloadPrompt}
+          </p>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-5 pt-5">
         <div className="flex flex-col gap-4">
           {previewQuestions.map((q) => (
             <div key={q.number} className="flex flex-col gap-2">
@@ -158,12 +215,6 @@ function QuizResultModal({
                   <p className="text-xs text-slate-500">B. False</p>
                 </div>
               )}
-
-              {q.type === "identification" && (
-                <div className="pl-4">
-                  <div className="border-b border-slate-300 w-48 h-5" />
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -172,57 +223,14 @@ function QuizResultModal({
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
             {copy.resultModal.answerKeyLabel}
           </p>
-          <p className="text-xs text-slate-500">
-            {previewQuestions.map((q) => `${q.number}. ${q.answer}`).join("  ")}
-          </p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+            {previewQuestions.map((q) => (
+              <p key={q.number} className="text-xs text-slate-500">
+                {q.number}. {q.answer}
+              </p>
+            ))}
+          </div>
         </div>
-
-        <p className="text-xs text-slate-400 text-center">
-          {copy.resultModal.captionPrefix} {previewQuestions.length}{" "}
-          {copy.resultModal.captionMiddle} {result.totalQuestions}{" "}
-          {copy.resultModal.captionSuffix}
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={onGenerateAnother}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            {copy.resultModal.generateAnotherLabel}
-          </button>
-          <button
-            type="button"
-            onClick={handleViewQuizzes}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            {copy.resultModal.viewQuizzesLabel}
-          </button>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                {copy.resultModal.downloadingLabel}
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" />
-                {copy.resultModal.downloadLabel}
-              </>
-            )}
-          </button>
-        </div>
-
-        {downloadMessage && (
-          <p className="text-xs text-slate-400 text-center">{downloadMessage}</p>
-        )}
       </div>
     </Modal>
   );
@@ -325,10 +333,10 @@ export default function Home() {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col gap-6 w-full max-w-2xl">
           <div
-            className={`rounded-2xl bg-white h-40 transition-all duration-200 ${
+            className={`rounded-2xl h-40 transition-all duration-200 ${
               !file
-                ? "border-2 border-dashed border-slate-200 hover:border-slate-300"
-                : "border border-slate-200 shadow-sm"
+                ? "bg-transparent border-2 border-dashed border-slate-300"
+                : "bg-white border border-slate-200 shadow-sm"
             }`}
           >
             <div
@@ -344,11 +352,9 @@ export default function Home() {
                   className="flex flex-col items-center justify-center gap-2 cursor-pointer w-full h-full"
                 >
                   <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-slate-300" />
-                  <p className="text-sm sm:text-base font-medium text-slate-600">
+                  <p className="text-base font-medium text-slate-600">
                     {copy.upload.label}
                   </p>
-                  <p className="text-xs sm:text-sm text-slate-400">{copy.upload.hint}</p>
-                  <p className="text-[11px] text-slate-300">{copy.upload.maxSizeLabel}</p>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3 sm:gap-4 w-full">

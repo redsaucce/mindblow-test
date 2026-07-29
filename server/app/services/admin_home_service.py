@@ -4,7 +4,6 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.newsletter_subscriber import NewsletterSubscriber
 from app.models.quiz_data import Quiz
 from app.models.user_data import User
 
@@ -76,13 +75,11 @@ async def _donut_chart(db: AsyncSession) -> list[dict]:
 async def get_stats(db: AsyncSession) -> dict:
     total_users = await _stat_pair(db, User, User.created_at)
     quizzes_generated = await _stat_pair(db, Quiz, Quiz.created_at)
-    newsletter_subscribers = await _stat_pair(db, NewsletterSubscriber, NewsletterSubscriber.subscribed_at)
 
     return {
         "totalUsers": total_users,
         "quizzesGenerated": quizzes_generated,
         "downloadedQuizzes": {"current": 0, "previous": None},
-        "newsletterSubscribers": newsletter_subscribers,
         "lineChart": await _line_chart(db),
         "donutChart": await _donut_chart(db),
     }
