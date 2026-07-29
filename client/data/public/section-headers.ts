@@ -19,9 +19,4 @@ export const sectionHeaders = {
     subtitle:
       "MindBlow is 100% free right now — no card, no fees, no limits. Quiz as much as you want while we're in early access.",
   },
-  newsletter: {
-    variant: "white",
-    title: "Get MindBlow Updates",
-    subtitle: "Stay updated — news and new features delivered to your inbox.",
-  },
 } as const;
