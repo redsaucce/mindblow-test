@@ -25,8 +25,6 @@ interface DeleteUserResponse {
   message: string;
 }
 
-const DEFAULT_PAGE_SIZE = 20;
-
 function formatDate(isoDatetime: string): string {
   return new Date(isoDatetime).toLocaleDateString("en-US", {
     timeZone: "Asia/Manila",
@@ -46,18 +44,9 @@ function toAdminUser(response: AdminUserResponse): AdminUser {
   };
 }
 
-export async function listUsers(
-  page = 1,
-  pageSize = DEFAULT_PAGE_SIZE
-): Promise<{ users: AdminUser[]; total: number; pageCount: number }> {
-  const response = await apiClient.get<AdminUserListResponse>(
-    `/admin/users?page=${page}&pageSize=${pageSize}`
-  );
-  return {
-    users: response.users.map(toAdminUser),
-    total: response.total,
-    pageCount: Math.max(1, Math.ceil(response.total / pageSize)),
-  };
+export async function listUsers(): Promise<AdminUser[]> {
+  const response = await apiClient.get<AdminUserListResponse>(`/admin/users`);
+  return response.users.map(toAdminUser);
 }
 
 export async function deleteUser(id: string): Promise<DeleteUserResponse> {

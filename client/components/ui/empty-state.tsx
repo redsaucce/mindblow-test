@@ -14,7 +14,7 @@ interface EmptyStateProps {
 
 export default function EmptyState({ icon: Icon, title, subtitle, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-16">
+    <div className="flex flex-col items-center justify-center gap-2 h-full min-h-[160px] py-8">
       <Icon className="w-10 h-10 text-slate-300" />
       <p className="text-sm text-slate-500 mt-2">{title}</p>
       {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}

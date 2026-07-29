@@ -14,28 +14,17 @@ type LoadState = "loading" | "ready" | "error";
 export default function UserList() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [data, setData] = useState<AdminUser[]>([]);
-  const [total, setTotal] = useState(0);
-  const [pageCount, setPageCount] = useState(1);
-  const [pageIndex, setPageIndex] = useState(0);
-  // Rows-per-page is driven purely by how many actually fit the viewport
-  // (reported by DataTable's onPageSizeChange once its skeleton measures
-  // real space) — never a guessed default. Starts null; the fetch effect
-  // waits for a real value before requesting anything from the server.
-  const [pageSize, setPageSize] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
-    if (pageSize === null) return;
     let cancelled = false;
     setLoadState("loading");
-    listUsers(pageIndex + 1, pageSize)
+    listUsers()
       .then((result) => {
         if (cancelled) return;
-        setData(result.users);
-        setTotal(result.total);
-        setPageCount(result.pageCount);
+        setData(result);
         setLoadState("ready");
       })
       .catch(() => {
@@ -45,12 +34,7 @@ export default function UserList() {
     return () => {
       cancelled = true;
     };
-  }, [pageIndex, pageSize]);
-
-  const handlePageSizeChange = (nextPageSize: number) => {
-    setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
-    setPageIndex(0);
-  };
+  }, []);
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -63,7 +47,6 @@ export default function UserList() {
     try {
       await deleteUserRequest(deleteTarget);
       setData((prev) => prev.filter((u) => u.id !== deleteTarget));
-      setTotal((prev) => Math.max(0, prev - 1));
       setDeleteTarget(null);
       showFeedback(copy.feedback.deleted);
     } catch {
@@ -140,6 +123,7 @@ export default function UserList() {
         data={data}
         columns={columns}
         columnWidths={[340, 120, 180, 180, 100]}
+        isLoading={loadState === "loading"}
         emptyIcon={Users}
         emptyTitle={
           loadState === "error"
@@ -149,11 +133,6 @@ export default function UserList() {
               : emptyStates.userList.title
         }
         summaryTemplate={copy.summaryTemplate}
-        manualPagination
-        pageCount={pageCount}
-        totalCount={total}
-        onPageChange={setPageIndex}
-        onPageSizeChange={handlePageSizeChange}
       />
 
       {feedback && <p className="mt-3 text-xs text-slate-500">{feedback}</p>}

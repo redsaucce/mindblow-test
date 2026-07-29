@@ -22,19 +22,9 @@ interface ActivityLogListResponse {
   total: number;
 }
 
-const DEFAULT_PAGE_SIZE = 20;
-
-export async function listLogs(
-  tab: string,
-  page = 1,
-  pageSize = DEFAULT_PAGE_SIZE
-): Promise<{ logs: ActivityLogEntry[]; total: number; pageCount: number }> {
+export async function listLogs(tab: string): Promise<ActivityLogEntry[]> {
   const response = await apiClient.get<ActivityLogListResponse>(
-    `/admin/logs?tab=${encodeURIComponent(tab)}&page=${page}&pageSize=${pageSize}`
+    `/admin/logs?tab=${encodeURIComponent(tab)}`
   );
-  return {
-    logs: response.logs,
-    total: response.total,
-    pageCount: Math.max(1, Math.ceil(response.total / pageSize)),
-  };
+  return response.logs;
 }

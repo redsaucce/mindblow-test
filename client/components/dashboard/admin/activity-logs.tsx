@@ -34,14 +34,6 @@ export default function ActivityLog() {
   const [activeTab, setActiveTab] = useState("all");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [pageCount, setPageCount] = useState(1);
-  const [pageIndex, setPageIndex] = useState(0);
-  // Rows-per-page is driven purely by how many actually fit the viewport
-  // (reported by DataTable's onPageSizeChange once its skeleton measures
-  // real space) — never a guessed default. Starts null; the fetch effect
-  // waits for a real value before requesting anything from the server.
-  const [pageSize, setPageSize] = useState<number | null>(null);
   const {
     value: filterOpen,
     toggle: toggleFilter,
@@ -49,15 +41,12 @@ export default function ActivityLog() {
   } = useToggle(false);
 
   useEffect(() => {
-    if (pageSize === null) return;
     let cancelled = false;
     setLoadState("loading");
-    listLogs(activeTab, pageIndex + 1, pageSize)
+    listLogs(activeTab)
       .then((result) => {
         if (cancelled) return;
-        setLogs(result.logs);
-        setTotal(result.total);
-        setPageCount(result.pageCount);
+        setLogs(result);
         setLoadState("ready");
       })
       .catch(() => {
@@ -67,16 +56,10 @@ export default function ActivityLog() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, pageIndex, pageSize]);
-
-  const handlePageSizeChange = (nextPageSize: number) => {
-    setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
-    setPageIndex(0);
-  };
+  }, [activeTab]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    setPageIndex(0);
     closeFilter();
   };
 
@@ -153,6 +136,7 @@ export default function ActivityLog() {
       data={logs}
       columns={columns}
       columnWidths={[300, 600]}
+      isLoading={loadState === "loading"}
       emptyIcon={ScrollText}
       emptyTitle={
         loadState === "error"
@@ -163,11 +147,6 @@ export default function ActivityLog() {
       }
       summaryTemplate={copy.summaryTemplate}
       resetKey={activeTab}
-      manualPagination
-      pageCount={pageCount}
-      totalCount={total}
-      onPageChange={setPageIndex}
-      onPageSizeChange={handlePageSizeChange}
     />
   );
 }
