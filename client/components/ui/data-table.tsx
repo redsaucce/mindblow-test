@@ -134,7 +134,7 @@ export default function DataTable<T>({
   totalCount,
   onPageChange,
 }: DataTableProps<T>) {
-  const auto = useAutoPageSize({ rowHeight, resetKey });
+  const auto = useAutoPageSize({ rowHeight, resetKey, remeasureKey: data.length });
   const [manualPageIndex, setManualPageIndex] = useState(0);
 
   const pagination = manualPagination

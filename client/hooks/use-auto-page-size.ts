@@ -11,6 +11,16 @@ interface UseAutoPageSizeOptions {
   fadeMs?: number;
   /** Reset to page 0 whenever this changes — e.g. a filter/tab value. */
   resetKey?: unknown;
+  /**
+   * Re-measure available space whenever this changes — e.g. the loaded
+   * data's length, or a loading-state flag. The initial measurement runs
+   * on mount, before an async fetch has resolved, while the table/footer
+   * are still showing their loading/empty layout. Without this, pageSize
+   * gets locked to that stale measurement and never corrects itself once
+   * real rows render, which can make the page taller than the viewport
+   * (whole-page scroll) instead of clipping to the correct row count.
+   */
+  remeasureKey?: unknown;
 }
 
 /**
@@ -32,6 +42,7 @@ export function useAutoPageSize({
   bottomPadding = 24,
   fadeMs = 120,
   resetKey,
+  remeasureKey,
 }: UseAutoPageSizeOptions) {
   const tableRef = useRef<HTMLTableElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
@@ -65,20 +76,34 @@ export function useAutoPageSize({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 
+  const computeCount = () => {
+    const tableEl = tableRef.current;
+    const footerEl = footerRef.current;
+    if (!tableEl || !footerEl) return pageSizeRef.current;
+
+    const tableTop = tableEl.getBoundingClientRect().top;
+    const footerHeight = footerEl.offsetHeight;
+    const available =
+      window.innerHeight - tableTop - theadHeight - footerHeight - bottomPadding;
+    return Math.max(1, Math.floor(available / rowHeight));
+  };
+
+  // Re-measure whenever remeasureKey changes (e.g. data finishes loading).
+  // Runs after paint via rAF so the DOM reflects the just-rendered rows —
+  // measuring synchronously here would still catch the pre-render layout.
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      const count = computeCount();
+      if (count === pageSizeRef.current) return;
+      pageSizeRef.current = count;
+      setPagination((prev) => ({ ...prev, pageSize: count }));
+    });
+    return () => cancelAnimationFrame(rafId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remeasureKey]);
+
   useEffect(() => {
     let rafId: number;
-
-    const computeCount = () => {
-      const tableEl = tableRef.current;
-      const footerEl = footerRef.current;
-      if (!tableEl || !footerEl) return pageSizeRef.current;
-
-      const tableTop = tableEl.getBoundingClientRect().top;
-      const footerHeight = footerEl.offsetHeight;
-      const available =
-        window.innerHeight - tableTop - theadHeight - footerHeight - bottomPadding;
-      return Math.max(1, Math.floor(available / rowHeight));
-    };
 
     const initialCount = computeCount();
     setPagination((prev) =>
