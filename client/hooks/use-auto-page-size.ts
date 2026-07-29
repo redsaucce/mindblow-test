@@ -13,12 +13,12 @@ interface UseAutoPageSizeOptions {
   resetKey?: unknown;
   /**
    * Re-measure available space whenever this changes — e.g. the loaded
-   * data's length, or a loading-state flag. The initial measurement runs
-   * on mount, before an async fetch has resolved, while the table/footer
-   * are still showing their loading/empty layout. Without this, pageSize
-   * gets locked to that stale measurement and never corrects itself once
-   * real rows render, which can make the page taller than the viewport
-   * (whole-page scroll) instead of clipping to the correct row count.
+   * data's length. This is also what triggers the FIRST real measurement:
+   * on mount, before an async fetch resolves, the table shows an empty
+   * or loading state (not real rows), so measuring then would produce a
+   * bogus, usually-too-large fit count. Pass something that changes once
+   * real data has rendered (e.g. `data.length`) so the first measurement
+   * reflects the actual table.
    */
   remeasureKey?: unknown;
   /**
@@ -88,7 +88,7 @@ export function useAutoPageSize({
   const computeCount = () => {
     const tableEl = tableRef.current;
     const footerEl = footerRef.current;
-    if (!tableEl || !footerEl) return pageSizeRef.current;
+    if (!tableEl || !footerEl) return null;
 
     const tableTop = tableEl.getBoundingClientRect().top;
     const footerHeight = footerEl.offsetHeight;
@@ -104,7 +104,7 @@ export function useAutoPageSize({
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       const count = computeCount();
-      if (count === pageSizeRef.current) return;
+      if (count === null || count === pageSizeRef.current) return;
       pageSizeRef.current = count;
       setPagination((prev) => ({ ...prev, pageSize: count }));
       onFitChange?.(count);
@@ -116,21 +116,22 @@ export function useAutoPageSize({
   useEffect(() => {
     let rafId: number;
 
-    const initialCount = computeCount();
-    setPagination((prev) =>
-      prev.pageSize === initialCount ? prev : { pageIndex: 0, pageSize: initialCount }
-    );
-    pageSizeRef.current = initialCount;
-    onFitChange?.(initialCount);
-
+    // No initial measurement here on purpose: on mount, before any data
+    // has loaded, the table is rendering its empty/loading state (a short
+    // EmptyState block, not full rows), so measuring immediately produces
+    // a bogus, usually-too-large fit count — which is what caused pages
+    // to request a fixed ~20 rows from the server and overflow into
+    // whole-page scroll. The remeasureKey effect above runs once real
+    // rows exist and reports the first correct measurement instead. This
+    // effect only needs to react to window resizes after that point.
     const applyResize = () => {
       const count = computeCount();
-      if (count === pageSizeRef.current) return;
+      if (count === null || count === pageSizeRef.current) return;
 
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
       setIsFading(true);
       fadeTimer.current = setTimeout(() => {
-        setPagination({ pageIndex: 0, pageSize: count });
+        setPagination((prev) => ({ ...prev, pageSize: count }));
         pageSizeRef.current = count;
         setIsFading(false);
         onFitChange?.(count);
