@@ -37,6 +37,7 @@ export default function AuthModal() {
 
   const [touched, setTouched] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const {
     email,
@@ -77,6 +78,7 @@ export default function AuthModal() {
     resetEmailState();
     setTouched(false);
     setFocused(false);
+    setAgreedToTerms(false);
   }, [resetEmailState]);
 
   const handleClose = () => {
@@ -154,11 +156,10 @@ export default function AuthModal() {
       open={authOpen}
       onClose={handleClose}
       maxWidthClassName="max-w-md"
-      contentClassName="p-8 min-h-[420px] flex flex-col"
-    >
-      {isForm ? (
-        <>
-          <div className="flex items-center gap-3 mb-5">
+      contentClassName="p-8 flex flex-col"
+      header={
+        isForm ? (
+          <div className="flex items-center gap-3 px-8 pt-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
@@ -166,7 +167,11 @@ export default function AuthModal() {
               {copy.header.title}
             </h2>
           </div>
-
+        ) : undefined
+      }
+    >
+      {isForm ? (
+        <>
           <p className="text-slate-500 text-sm leading-relaxed mb-6">
             {copy.header.subtitle}
           </p>
@@ -212,7 +217,7 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-200 mt-2 disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {isLoading ? (
                 <>
