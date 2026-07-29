@@ -17,6 +17,11 @@ export default function UserList() {
   const [total, setTotal] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [pageIndex, setPageIndex] = useState(0);
+  // Rows-per-page is driven by how many actually fit the viewport
+  // (reported by DataTable's onPageSizeChange), not a fixed server
+  // default — otherwise an overfull page pushes the footer off-screen
+  // and the whole page scrolls instead of paginating.
+  const [pageSize, setPageSize] = useState(9);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -24,7 +29,7 @@ export default function UserList() {
   useEffect(() => {
     let cancelled = false;
     setLoadState("loading");
-    listUsers(pageIndex + 1)
+    listUsers(pageIndex + 1, pageSize)
       .then((result) => {
         if (cancelled) return;
         setData(result.users);
@@ -39,7 +44,12 @@ export default function UserList() {
     return () => {
       cancelled = true;
     };
-  }, [pageIndex]);
+  }, [pageIndex, pageSize]);
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
+    setPageIndex(0);
+  };
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -142,6 +152,7 @@ export default function UserList() {
         pageCount={pageCount}
         totalCount={total}
         onPageChange={setPageIndex}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {feedback && <p className="mt-3 text-xs text-slate-500">{feedback}</p>}

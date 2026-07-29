@@ -115,6 +115,14 @@ interface DataTableProps<T> {
   totalCount?: number;
   /** Called with the new 0-indexed page when the user navigates. Required when `manualPagination` is true. */
   onPageChange?: (pageIndex: number) => void;
+  /**
+   * Called whenever the fit-to-viewport row count changes (mount, resize,
+   * or data load). Only relevant when `manualPagination` is true — since
+   * the caller owns the fetch, it needs to know how many rows actually
+   * fit so it can request that many per page instead of whatever the
+   * server defaults to (which can overflow the viewport into page scroll).
+   */
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 export default function DataTable<T>({
@@ -133,8 +141,14 @@ export default function DataTable<T>({
   pageCount,
   totalCount,
   onPageChange,
+  onPageSizeChange,
 }: DataTableProps<T>) {
-  const auto = useAutoPageSize({ rowHeight, resetKey, remeasureKey: data.length });
+  const auto = useAutoPageSize({
+    rowHeight,
+    resetKey,
+    remeasureKey: data.length,
+    onFitChange: onPageSizeChange,
+  });
   const [manualPageIndex, setManualPageIndex] = useState(0);
 
   const pagination = manualPagination
@@ -167,8 +181,12 @@ export default function DataTable<T>({
   const rowsPerPageForSpacer = manualPagination ? data.length : auto.pagination.pageSize;
   const spacerCount = Math.max(0, rowsPerPageForSpacer - dataRows.length);
   const isFading = manualPagination ? false : auto.isFading;
-  const tableRef = manualPagination ? undefined : auto.tableRef;
-  const footerRef = manualPagination ? undefined : auto.footerRef;
+  // Refs are always attached (even in manual mode) so useAutoPageSize can
+  // measure real on-screen space and report the fitted row count via
+  // onFitChange/onPageSizeChange — manual-pagination callers need that
+  // number to request the right amount of rows from the server.
+  const tableRef = auto.tableRef;
+  const footerRef = auto.footerRef;
 
   const summaryTotal = manualPagination
     ? (totalCount ?? 0)

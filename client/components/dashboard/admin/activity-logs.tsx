@@ -37,6 +37,11 @@ export default function ActivityLog() {
   const [total, setTotal] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [pageIndex, setPageIndex] = useState(0);
+  // Rows-per-page is driven by how many actually fit the viewport
+  // (reported by DataTable's onPageSizeChange), not a fixed server
+  // default — otherwise an overfull page pushes the footer off-screen
+  // and the whole page scrolls instead of paginating.
+  const [pageSize, setPageSize] = useState(9);
   const {
     value: filterOpen,
     toggle: toggleFilter,
@@ -46,7 +51,7 @@ export default function ActivityLog() {
   useEffect(() => {
     let cancelled = false;
     setLoadState("loading");
-    listLogs(activeTab, pageIndex + 1)
+    listLogs(activeTab, pageIndex + 1, pageSize)
       .then((result) => {
         if (cancelled) return;
         setLogs(result.logs);
@@ -61,7 +66,12 @@ export default function ActivityLog() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, pageIndex]);
+  }, [activeTab, pageIndex, pageSize]);
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
+    setPageIndex(0);
+  };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -156,6 +166,7 @@ export default function ActivityLog() {
       pageCount={pageCount}
       totalCount={total}
       onPageChange={setPageIndex}
+      onPageSizeChange={handlePageSizeChange}
     />
   );
 }

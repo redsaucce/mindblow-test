@@ -21,6 +21,14 @@ interface UseAutoPageSizeOptions {
    * (whole-page scroll) instead of clipping to the correct row count.
    */
   remeasureKey?: unknown;
+  /**
+   * Called whenever the fitted row count changes (initial measure, resize,
+   * or remeasureKey change). Used by server/manual-pagination callers to
+   * know how many rows to request per page, since in that mode DataTable
+   * can't just re-slice already-loaded data — it has to ask the server
+   * for the right amount up front.
+   */
+  onFitChange?: (rowsThatFit: number) => void;
 }
 
 /**
@@ -43,6 +51,7 @@ export function useAutoPageSize({
   fadeMs = 120,
   resetKey,
   remeasureKey,
+  onFitChange,
 }: UseAutoPageSizeOptions) {
   const tableRef = useRef<HTMLTableElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +97,8 @@ export function useAutoPageSize({
     return Math.max(1, Math.floor(available / rowHeight));
   };
 
-  // Re-measure whenever remeasureKey changes (e.g. data finishes loading).
+  // Re-measure whenever remeasureKey changes (e.g. data finishes loading,
+  // or manual/server pagination needs a fresh fit-to-viewport count).
   // Runs after paint via rAF so the DOM reflects the just-rendered rows —
   // measuring synchronously here would still catch the pre-render layout.
   useEffect(() => {
@@ -97,6 +107,7 @@ export function useAutoPageSize({
       if (count === pageSizeRef.current) return;
       pageSizeRef.current = count;
       setPagination((prev) => ({ ...prev, pageSize: count }));
+      onFitChange?.(count);
     });
     return () => cancelAnimationFrame(rafId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,6 +121,7 @@ export function useAutoPageSize({
       prev.pageSize === initialCount ? prev : { pageIndex: 0, pageSize: initialCount }
     );
     pageSizeRef.current = initialCount;
+    onFitChange?.(initialCount);
 
     const applyResize = () => {
       const count = computeCount();
@@ -121,6 +133,7 @@ export function useAutoPageSize({
         setPagination({ pageIndex: 0, pageSize: count });
         pageSizeRef.current = count;
         setIsFading(false);
+        onFitChange?.(count);
       }, fadeMs);
     };
 
