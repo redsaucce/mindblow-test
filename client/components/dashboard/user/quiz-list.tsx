@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileX, Download, ScrollText } from "lucide-react";
+import { FileX, Download, Loader2, ScrollText } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import AlertModal from "@/components/ui/alert-modal";
 import ScrollBar from "@/components/ui/scroll-bar";
@@ -10,12 +10,19 @@ import EmptyState from "@/components/ui/empty-state";
 import { useAutoScrollHeight } from "@/hooks/use-auto-scroll-height";
 import { quizListContent as copy } from "@/data/dashboard/user/quiz-list";
 import { emptyStates } from "@/data/ui/empty-states";
-import { type Quiz, listQuizzes, deleteQuiz as deleteQuizRequest } from "@/services/dashboard/user-quiz-list-service";
+import {
+  type Quiz,
+  type QuizDetail,
+  listQuizzes,
+  deleteQuiz as deleteQuizRequest,
+  getQuizDetail,
+} from "@/services/dashboard/user-quiz-list-service";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
 
 type DeleteTarget = { type: "single"; id: string } | { type: "bulk" } | null;
 type DownloadTarget = { ids: string[] } | null;
 type LoadState = "loading" | "ready" | "error";
+type PreviewLoadState = "loading" | "ready" | "error";
 
 async function deleteQuizzes(ids: string[]) {
   await Promise.all(ids.map((id) => deleteQuizRequest(id)));
@@ -39,6 +46,7 @@ function interpolate(template: string, count: number) {
 export default function QuizList() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previewScrollContainerRef = useRef<HTMLDivElement>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const { containerRef: autoHeightRef, maxHeight } = useAutoScrollHeight({
     recomputeKey: loadState,
@@ -50,6 +58,8 @@ export default function QuizList() {
   const [downloadTarget, setDownloadTarget] = useState<DownloadTarget>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
+  const [previewDetail, setPreviewDetail] = useState<QuizDetail | null>(null);
+  const [previewLoadState, setPreviewLoadState] = useState<PreviewLoadState>("loading");
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
@@ -83,6 +93,24 @@ export default function QuizList() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const openPreview = async (quiz: Quiz) => {
+    setPreviewQuiz(quiz);
+    setPreviewDetail(null);
+    setPreviewLoadState("loading");
+    try {
+      const detail = await getQuizDetail(quiz.id);
+      setPreviewDetail(detail);
+      setPreviewLoadState("ready");
+    } catch {
+      setPreviewLoadState("error");
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewQuiz(null);
+    setPreviewDetail(null);
   };
 
   const handleDeleteClick = () => {
@@ -254,7 +282,7 @@ export default function QuizList() {
               {quizzes.map((quiz) => (
                 <div
                   key={quiz.id}
-                  onClick={() => setPreviewQuiz(quiz)}
+                  onClick={() => openPreview(quiz)}
                   className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors duration-200 last:border-b-0"
                 >
                   <div onClick={(e) => e.stopPropagation()}>
@@ -340,31 +368,117 @@ export default function QuizList() {
       {/* Quiz preview */}
       <Modal
         open={!!previewQuiz}
-        onClose={() => setPreviewQuiz(null)}
-        maxWidthClassName="max-w-lg"
-        contentClassName="p-6"
+        onClose={closePreview}
+        maxWidthClassName="max-w-2xl"
+        contentClassName="px-6 pb-6"
+        scrollContainerRef={previewScrollContainerRef}
+        header={
+          previewQuiz && (
+            <div className="px-6 pr-14 pt-6 pb-4 border-b border-slate-100">
+              <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
+                {previewQuiz.documentName}
+              </h2>
+              <p className="text-sm text-slate-400">
+                {previewQuiz.category} · {previewQuiz.quantity} questions · {previewQuiz.date}
+              </p>
+            </div>
+          )
+        }
+        footer={
+          previewQuiz && (
+            <div className="px-6 pt-4 pb-6 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closePreview();
+                    router.push("/user");
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  <ScrollText className="w-3.5 h-3.5" />
+                  Generate Quiz
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const quiz = previewQuiz;
+                    closePreview();
+                    setDownloadTarget({ ids: [quiz.id] });
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {copy.previewModal.downloadLabel}
+                </button>
+              </div>
+            </div>
+          )
+        }
       >
         {previewQuiz && (
-          <>
-            <h2 className="font-heading text-lg font-bold text-slate-900 mb-1">
-              {previewQuiz.documentName}
-            </h2>
-            <p className="text-sm text-slate-400 mb-5">
-              {previewQuiz.category} · {previewQuiz.quantity} questions · {previewQuiz.date}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                const quiz = previewQuiz;
-                setPreviewQuiz(null);
-                setDownloadTarget({ ids: [quiz.id] });
-              }}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all duration-200"
-            >
-              <Download className="w-4 h-4" />
-              {copy.previewModal.downloadLabel}
-            </button>
-          </>
+          <div className="pt-5">
+            {previewLoadState === "loading" && (
+              <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <p className="text-sm">Loading questions...</p>
+              </div>
+            )}
+
+            {previewLoadState === "error" && (
+              <div className="py-16 flex flex-col items-center justify-center">
+                <EmptyState
+                  icon={FileX}
+                  title="Couldn't load this quiz"
+                  subtitle="Please try again."
+                />
+              </div>
+            )}
+
+            {previewLoadState === "ready" && previewDetail && (
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
+                  {previewDetail.questions.map((q) => (
+                    <div key={q.number} className="flex flex-col gap-2">
+                      <p className="text-sm font-medium text-slate-900">
+                        {q.number}. {q.text}
+                      </p>
+
+                      {q.type === "mcq" && q.options && (
+                        <div className="grid grid-cols-2 gap-1.5 pl-4">
+                          {q.options.map((opt, i) => (
+                            <p key={i} className="text-xs text-slate-500">
+                              {String.fromCharCode(65 + i)}. {opt}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+
+                      {q.type === "tf" && (
+                        <div className="flex gap-4 pl-4">
+                          <p className="text-xs text-slate-500">A. True</p>
+                          <p className="text-xs text-slate-500">B. False</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-2">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                    Answer key
+                  </p>
+                  <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                    {previewDetail.questions.map((q) => (
+                      <p key={q.number} className="text-xs text-slate-500">
+                        {q.number}. {q.answer}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </Modal>
     </>

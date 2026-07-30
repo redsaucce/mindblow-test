@@ -32,12 +32,26 @@ def export_quiz(quiz: Quiz, questions: list[QuizQuestion]) -> bytes:
         elif quiz.quiz_type == "true_false":
             doc.add_paragraph("    A. True")
             doc.add_paragraph("    B. False")
-        else:
-            doc.add_paragraph("    ______________________")
 
     doc.add_heading("Answer Key", level=2)
-    for q in sorted(questions, key=lambda x: x.order):
-        doc.add_paragraph(f"{q.order}. {q.correct_answer}")
+
+    sorted_questions = sorted(questions, key=lambda x: x.order)
+    total = len(sorted_questions)
+    half = (total + 1) // 2  # left column gets the extra one if odd
+
+    left_col = sorted_questions[:half]
+    right_col = sorted_questions[half:]
+
+    table = doc.add_table(rows=half, cols=2)
+    table.style = "Table Grid"
+
+    for i in range(half):
+        left_q = left_col[i]
+        table.rows[i].cells[0].text = f"{left_q.order}. {left_q.correct_answer or ''}"
+
+        if i < len(right_col):
+            right_q = right_col[i]
+            table.rows[i].cells[1].text = f"{right_q.order}. {right_q.correct_answer or ''}"
 
     buffer = io.BytesIO()
     doc.save(buffer)
