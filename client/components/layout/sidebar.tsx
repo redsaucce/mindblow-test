@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ChevronUp, LogOut, X } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
@@ -16,7 +16,6 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const role: "user" | "admin" = pathname.startsWith("/admin") ? "admin" : "user";
   const links = sidebarLinks[role];
 
@@ -69,7 +68,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     } finally {
       setLogoutConfirmOpen(false);
       setIsLoggingOut(false);
-      router.push("/");
+      window.location.href = "/";
     }
   };
 
