@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronUp, LogOut } from "lucide-react";
+import { ChevronUp, LogOut, X } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
 import { useToggle } from "@/hooks/use-toggle";
@@ -45,6 +45,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     close: closeAccount,
   } = useToggle(false);
 
+  // Keep the account dropdown from staying open underneath a closed
+  // mobile sidebar — collapsing the sidebar should collapse this too.
+  useEffect(() => {
+    if (!open) closeAccount();
+  }, [open, closeAccount]);
+
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -69,30 +75,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <>
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 flex flex-col bg-white border-r border-slate-100 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-[60] w-full lg:z-50 lg:w-64 shrink-0 flex flex-col bg-white lg:border-r lg:border-slate-100 shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="px-4 py-6">
+        <div className="flex items-center justify-between px-6 py-5 lg:px-4 lg:py-6 border-b border-slate-100 lg:border-b-0">
           <Link
             href="/"
+            onClick={onClose}
             className="font-heading font-extrabold text-xl text-green-700 tracking-tight hover:opacity-80 transition-opacity duration-200"
           >
             {sidebarAccount.brand}
           </Link>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            className="lg:hidden w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="h-px bg-slate-100" />
+        <div className="hidden lg:block h-px bg-slate-100" />
 
-        <nav className="flex-1 overflow-y-auto px-2 py-4">
+        <nav className="flex-1 overflow-y-auto px-6 py-6 lg:px-2 lg:py-4">
           <ul className="space-y-1">
             {links.map((link) => {
               const active = pathname === link.href;
@@ -101,10 +108,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   <Link
                     href={link.href}
                     onClick={onClose}
-                    className={`flex items-center gap-3 w-full text-sm rounded-md px-4 py-3 transition-colors duration-200 ${
+                    className={`flex items-center gap-3 w-full text-sm sm:text-base lg:text-sm rounded-xl lg:rounded-md px-4 py-3 transition-colors duration-200 ${
                       active
-                        ? "bg-emerald-50 text-green-700 font-medium border-l-2 border-green-700"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-green-700"
+                        ? "bg-emerald-50 text-green-700 font-medium lg:border-l-2 lg:border-green-700"
+                        : "text-slate-700 lg:text-slate-600 hover:bg-slate-50 hover:text-green-700"
                     }`}
                   >
                     {link.label}
