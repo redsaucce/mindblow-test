@@ -201,8 +201,8 @@ export default function QuizList() {
   return (
     <>
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100">
+          <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={allChecked}
@@ -213,14 +213,14 @@ export default function QuizList() {
               aria-label="Select all"
               className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/30"
             />
-            <span className="text-sm text-slate-600">{copy.selectAllLabel}</span>
+            <span className="text-xs sm:text-sm text-slate-600">{copy.selectAllLabel}</span>
           </label>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={handleDownloadClick}
               disabled={selected.size === 0}
-              className="rounded-full px-6 py-1.5 text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+              className="rounded-full px-3 py-1 text-xs sm:px-6 sm:py-1.5 sm:text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
             >
               {copy.downloadLabel}
             </button>
@@ -228,7 +228,7 @@ export default function QuizList() {
               type="button"
               onClick={handleDeleteClick}
               disabled={selected.size === 0}
-              className="rounded-full px-6 py-1.5 text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+              className="rounded-full px-3 py-1 text-xs sm:px-6 sm:py-1.5 sm:text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
             >
               {selected.size > 0 ? `${copy.deleteLabel} (${selected.size})` : copy.deleteAllLabel}
             </button>

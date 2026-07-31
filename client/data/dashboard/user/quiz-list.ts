@@ -2,7 +2,7 @@ export const quizListContent = {
   selectAllLabel: "Select all",
   downloadLabel: "Download",
   deleteLabel: "Delete",
-  deleteAllLabel: "Delete all",
+  deleteAllLabel: "Delete",
   deleteDialog: {
     singleTitle: "Delete quiz?",
     singleDescription:
