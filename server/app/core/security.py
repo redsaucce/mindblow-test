@@ -8,7 +8,7 @@ from app.config import settings
 
 def create_access_token(user_id: str, role: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-    payload = {"sub": user_id, "role": role, "exp": expire}
+    payload = {"sub": user_id, "role": role, "exp": expire, "jti": secrets.token_urlsafe(16)}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
@@ -50,3 +50,21 @@ def clear_session_cookie(response) -> None:
 
 def clear_refresh_cookie(response) -> None:
     response.delete_cookie(key=settings.refresh_cookie_name)
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def set_csrf_cookie(response, token: str) -> None:
+    response.set_cookie(
+        key=settings.csrf_cookie_name,
+        value=token,
+        httponly=False,  # must be readable by frontend JS to echo back in a header
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
+
+
+def clear_csrf_cookie(response) -> None:
+    response.delete_cookie(key=settings.csrf_cookie_name)

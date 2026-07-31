@@ -29,6 +29,11 @@ class ForbiddenError(HTTPException):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to perform this action")
 
 
+class CSRFError(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing or invalid")
+
+
 class QuizNotFoundError(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
@@ -44,9 +49,19 @@ class CannotDeleteSelfError(HTTPException):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot delete your own account")
 
 
+class CannotDeleteLastAdminError(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete the last remaining admin account")
+
+
 class UnsupportedFileTypeError(HTTPException):
     def __init__(self, detail: str = "Only PDF or DOCX files are supported."):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+class FileTooLargeError(HTTPException):
+    def __init__(self, detail: str = "This file is too large. Please upload a smaller file."):
+        super().__init__(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=detail)
 
 
 class DocumentTooShortError(HTTPException):

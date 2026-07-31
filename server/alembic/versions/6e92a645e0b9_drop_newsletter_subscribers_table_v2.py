@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.drop_table('newsletter_subscribers')
+    op.execute("DROP TABLE IF EXISTS newsletter_subscribers")
 
 
 def downgrade() -> None:

@@ -1,9 +1,9 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import CannotDeleteSelfError, UserNotFoundError
+from app.core.exceptions import CannotDeleteLastAdminError, CannotDeleteSelfError, UserNotFoundError
 from app.models.quiz_data import Quiz
-from app.models.user_data import User
+from app.models.user_data import Role, User
 
 
 async def list_users(db: AsyncSession, page: int = 1, page_size: int = 20) -> tuple[list[dict], int]:
@@ -50,6 +50,13 @@ async def delete_user(db: AsyncSession, current_user_id: str, target_user_id: st
     user = result.scalar_one_or_none()
     if user is None:
         raise UserNotFoundError()
+
+    if user.role == Role.ADMIN:
+        admin_count_result = await db.execute(
+            select(func.count()).select_from(User).where(User.role == Role.ADMIN)
+        )
+        if admin_count_result.scalar_one() <= 1:
+            raise CannotDeleteLastAdminError()
 
     deleted_email = user.email
     await db.delete(user)

@@ -8,7 +8,7 @@ from alembic import context
 
 from app.config import settings
 from app.database import Base
-from app.models import user_data, magic_link_token, quiz_data, activity_log, prompt_context, quiz_question, refresh_token
+from app.models import user_data, magic_link_token, quiz_data, activity_log, prompt_context, quiz_question, refresh_token, revoked_token
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

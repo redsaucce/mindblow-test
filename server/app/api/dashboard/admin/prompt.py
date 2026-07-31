@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, require_admin
+from app.api.deps import get_db, require_admin, verify_csrf
 from app.models.user_data import User
 from app.schemas.prompt import PromptFields, UpdatePromptRequest, UpdatePromptResponse
 from app.services.prompt_service import get_or_create_default, update
@@ -22,7 +22,7 @@ async def get_prompt(
     )
 
 
-@router.put("", response_model=UpdatePromptResponse)
+@router.put("", response_model=UpdatePromptResponse, dependencies=[Depends(verify_csrf)])
 async def update_prompt(
     payload: UpdatePromptRequest,
     admin: User = Depends(require_admin),

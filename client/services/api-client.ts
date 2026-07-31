@@ -1,5 +1,10 @@
 const API_URL = "/api";
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|; )mb_csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: string;
@@ -34,10 +39,18 @@ async function request<T>(
   isRetry = false
 ): Promise<T> {
   const isFormData = options.body instanceof FormData;
+  const method = (options.method ?? "GET").toUpperCase();
 
   const headers: HeadersInit = isFormData
     ? { ...options.headers }
     : { "Content-Type": "application/json", ...options.headers };
+
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      (headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
+    }
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

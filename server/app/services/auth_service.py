@@ -9,7 +9,8 @@ from app.core.exceptions import ExpiredTokenError, InvalidTokenError, RateLimite
 from app.core.security import create_access_token, generate_refresh_token
 from app.models.magic_link_token import MagicLinkToken
 from app.models.refresh_token import RefreshToken
-from app.models.user_data import User
+from app.models.revoked_token import RevokedToken
+from app.models.user_data import Role, User
 from app.services.activity_log_service import log_action
 from app.services.mail_service import send_magic_link_email
 
@@ -33,7 +34,7 @@ async def request_magic_link(db: AsyncSession, email: str) -> None:
     if user is None:
         user = User(
             email=normalized_email,
-            role="user",
+            role=Role.USER,
         )
         db.add(user)
         await db.flush()
@@ -92,6 +93,21 @@ async def _issue_refresh_token(db: AsyncSession, user_id: str) -> str:
     return refresh_token_value
 
 
+async def _revoke_all_refresh_tokens_for_user(db: AsyncSession, user_id: str) -> None:
+    """Called when a dead (already-rotated) refresh token is presented again —
+    the standard signal that a token was stolen and is being replayed
+    alongside the legitimate rotated session. Kills every outstanding
+    refresh token for the user so both the attacker and the legitimate
+    session are forced to re-authenticate via a fresh magic link."""
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None)
+        )
+    )
+    for row in result.scalars().all():
+        row.revoked_at = datetime.now(timezone.utc)
+
+
 async def refresh_session(db: AsyncSession, refresh_token_value: str) -> tuple[str, str, str]:
     """Rotates the refresh token and issues a fresh access token.
     Returns (access_token, new_refresh_token, role)."""
@@ -103,21 +119,33 @@ async def refresh_session(db: AsyncSession, refresh_token_value: str) -> tuple[s
     if row is None:
         raise InvalidTokenError()
 
+    if row.revoked_at is not None:
+        # This exact token was already rotated away once before. Being
+        # presented again now means either a stolen copy is being replayed,
+        # or a client retried a request after its rotation already
+        # succeeded. We can't tell those apart, so we treat it as theft:
+        # kill every refresh token for this user and force a fresh login.
+        await _revoke_all_refresh_tokens_for_user(db, str(row.user_id))
+        await db.commit()
+        raise InvalidTokenError()
+
     cutoff = row.last_used_at + timedelta(days=settings.refresh_token_expire_days)
     if datetime.now(timezone.utc) > cutoff:
-        await db.delete(row)
+        row.revoked_at = datetime.now(timezone.utc)
         await db.commit()
         raise ExpiredTokenError()
 
     result = await db.execute(select(User).where(User.id == row.user_id))
     user = result.scalar_one_or_none()
     if user is None:
-        await db.delete(row)
+        row.revoked_at = datetime.now(timezone.utc)
         await db.commit()
         raise InvalidTokenError()
 
-    # Rotation: delete the old row, issue a brand new one
-    await db.delete(row)
+    # Rotation: mark the old row revoked (kept, not deleted, so a later
+    # replay of this same token can be recognized as reuse) and issue a
+    # brand new one.
+    row.revoked_at = datetime.now(timezone.utc)
     new_refresh_token_value = await _issue_refresh_token(db, str(user.id))
     access_token = create_access_token(user_id=str(user.id), role=user.role)
 
@@ -137,3 +165,29 @@ async def logout(db: AsyncSession, refresh_token_value: str | None) -> None:
 async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalar_one_or_none()
+
+
+async def is_token_revoked(db: AsyncSession, jti: str | None) -> bool:
+    if jti is None:
+        # Tokens without a jti predate this feature (or are malformed) — treat
+        # as not-revoked rather than raising, since revocation is an addition
+        # on top of normal expiry/signature checks, not a replacement for them.
+        return False
+    result = await db.execute(select(RevokedToken).where(RevokedToken.jti == jti))
+    return result.scalar_one_or_none() is not None
+
+
+async def revoke_access_token(db: AsyncSession, jti: str, expires_at: datetime) -> None:
+    db.add(RevokedToken(jti=jti, expires_at=expires_at))
+    await db.commit()
+
+
+async def revoke_all_access_tokens_for_user(db: AsyncSession, user_id: str) -> None:
+    """Best-effort mass revocation: since access tokens are stateless JWTs, we
+    can't enumerate a user's currently-outstanding jtis. Session-terminating
+    actions (logout, account deletion) revoke the specific token presented at
+    that time via revoke_access_token; this helper is a placeholder for a
+    future per-user revocation epoch if a "log out everywhere" feature is
+    ever needed. Currently a no-op, kept as an explicit extension point rather
+    than silently absent."""
+    return None

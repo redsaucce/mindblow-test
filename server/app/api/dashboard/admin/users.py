@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db, require_admin
+from app.api.deps import get_current_user, get_db, require_admin, verify_csrf
 from app.models.user_data import User
 from app.schemas.admin_users import AdminUserListResponse, DeleteUserResponse
 from app.services.admin_users_service import delete_user, list_users
@@ -19,7 +19,7 @@ async def get_admin_users(
     return AdminUserListResponse(users=users, total=total)
 
 
-@router.delete("/{user_id}", response_model=DeleteUserResponse)
+@router.delete("/{user_id}", response_model=DeleteUserResponse, dependencies=[Depends(verify_csrf)])
 async def delete_admin_user(
     user_id: str,
     admin: User = Depends(require_admin),

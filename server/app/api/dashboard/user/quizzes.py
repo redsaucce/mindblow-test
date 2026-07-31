@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, verify_csrf
 from app.models.user_data import User
 from app.schemas.quiz import DeleteQuizResponse, QuizListResponse, QuizResponse, QuizType
 from app.services.document_export_service import export_quiz, export_quizzes_zip
@@ -35,7 +35,7 @@ async def get_quizzes(
     )
 
 
-@router.post("", response_model=QuizResponse)
+@router.post("", response_model=QuizResponse, dependencies=[Depends(verify_csrf)])
 async def create_quiz(
     file: UploadFile,
     quizType: QuizType = Form(...),
@@ -121,7 +121,7 @@ async def get_quiz_by_id(
     )
 
 
-@router.delete("/{quiz_id}", response_model=DeleteQuizResponse)
+@router.delete("/{quiz_id}", response_model=DeleteQuizResponse, dependencies=[Depends(verify_csrf)])
 async def delete_quiz_by_id(
     quiz_id: str,
     user: User = Depends(get_current_user),
