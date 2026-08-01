@@ -14,6 +14,15 @@ from app.models.user_data import Role, User
 from app.services.activity_log_service import log_action
 from app.services.mail_service import send_magic_link_email
 
+# How long a just-rotated refresh token is still tolerated if presented again.
+# Concurrent tabs/requests can race to refresh the same token; the first to
+# arrive rotates it and the second shows up moments later holding the now-dead
+# token. Without this window that reuse looks identical to a stolen token
+# being replayed, and gets treated as theft (nukes every session for the
+# user). Within the window we instead treat it as a benign race and issue a
+# fresh token rather than escalating.
+REFRESH_REUSE_GRACE_SECONDS = 10
+
 
 async def request_magic_link(db: AsyncSession, email: str) -> None:
     normalized_email = email.strip().lower()
