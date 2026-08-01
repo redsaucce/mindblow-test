@@ -119,7 +119,7 @@ async def generate_quiz(
         title=title,
         direction=generated.direction,
         question_count=question_count,
-        quiz_type=ModelQuizType(quiz_type.value),
+        quiz_type=ModelQuizType(getattr(quiz_type, "value", quiz_type)),
     )
     db.add(quiz)
     await db.flush()
