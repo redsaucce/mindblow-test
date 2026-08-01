@@ -12,7 +12,7 @@ import { useModal } from "@/hooks/use-modal";
 function SkeletonBlock({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-slate-200/80 ${className}`}
+      className={`animate-pulse rounded-md bg-gradient-to-r from-emerald-100 to-green-100 ${className}`}
     />
   );
 }
@@ -23,16 +23,16 @@ function ProcessIllustrationSkeleton() {
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <div key={index}>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
+            <div className="flex items-center gap-4 rounded-2xl border border-emerald-100 bg-white p-8 shadow-sm">
               <SkeletonBlock className="h-10 w-10 shrink-0 rounded-lg" />
               <div className="min-w-0 flex-1 space-y-2">
-                <SkeletonBlock className="h-3.5 w-1/2" />
-                <SkeletonBlock className="h-3 w-3/4" />
+                <SkeletonBlock className="h-3.5 w-4/5" />
+                <SkeletonBlock className="h-3 w-full" />
               </div>
             </div>
             {index < 2 ? (
               <div className="flex justify-center py-1.5">
-                <ArrowDown className="h-6 w-6 text-slate-200" />
+                <ArrowDown className="h-6 w-6 text-emerald-200" />
               </div>
             ) : null}
           </div>
