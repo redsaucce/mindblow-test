@@ -4,13 +4,13 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.quiz_data import Quiz
+from app.models.quiz_data import Quiz, QuizType
 from app.models.user_data import User
 
 QUIZ_TYPE_LABELS = {
-    "multiple_choice": "Multiple Choice",
-    "true_false": "True or False",
-    "identification": "Identification",
+    QuizType.MULTIPLE_CHOICE: "Multiple Choice",
+    QuizType.TRUE_FALSE: "True or False",
+    QuizType.IDENTIFICATION: "Identification",
 }
 
 

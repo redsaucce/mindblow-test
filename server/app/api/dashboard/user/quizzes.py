@@ -146,7 +146,7 @@ async def get_quiz_by_id(
         direction=quiz.direction,
         questions=[
             {
-                "number": q.order,
+                "number": q.question_order,
                 "text": q.question_text,
                 "type": quiz.quiz_type,
                 "options": q.options,

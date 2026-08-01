@@ -1,3 +1,4 @@
+import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -21,6 +22,15 @@ def decode_access_token(token: str) -> dict:
 
 def generate_refresh_token() -> str:
     return secrets.token_urlsafe(48)
+
+
+def hash_token(raw_token: str) -> str:
+    """Used for refresh tokens and magic link tokens before they're stored or
+    looked up in the database — the raw value is only ever emailed or set as
+    a cookie, never persisted. Both token types are already high-entropy
+    (secrets.token_urlsafe), so a plain unsalted hash is sufficient; a DB
+    read alone can no longer be used to complete a sign-in or refresh."""
+    return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
 def set_session_cookie(response, token: str) -> None:

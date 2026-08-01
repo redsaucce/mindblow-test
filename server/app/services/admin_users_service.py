@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import CannotDeleteLastAdminError, CannotDeleteSelfError, UserNotFoundError
+from app.models.activity_log import ActivityType
 from app.models.quiz_data import Quiz
 from app.models.user_data import Role, User
 
@@ -66,5 +67,5 @@ async def delete_user(db: AsyncSession, current_user_id: str, target_user_id: st
         db,
         email=current_user_email,
         description=f"Deleted user {deleted_email}",
-        type="user_deleted",
+        type=ActivityType.USER_DELETED,
     )

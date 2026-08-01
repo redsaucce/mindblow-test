@@ -3,13 +3,13 @@ import zipfile
 
 from docx import Document as DocxDocument
 
-from app.models.quiz_data import Quiz
+from app.models.quiz_data import Quiz, QuizType
 from app.models.quiz_question import QuizQuestion
 
 QUIZ_TYPE_LABELS = {
-    "multiple_choice": "Multiple Choice",
-    "true_false": "True or False",
-    "identification": "Identification",
+    QuizType.MULTIPLE_CHOICE: "Multiple Choice",
+    QuizType.TRUE_FALSE: "True or False",
+    QuizType.IDENTIFICATION: "Identification",
 }
 
 
@@ -23,19 +23,19 @@ def export_quiz(quiz: Quiz, questions: list[QuizQuestion]) -> bytes:
         doc.add_paragraph(quiz.direction)
 
     doc.add_heading("Questions", level=2)
-    for q in sorted(questions, key=lambda x: x.order):
-        doc.add_paragraph(f"{q.order}. {q.question_text}")
-        if quiz.quiz_type == "multiple_choice" and q.options:
+    for q in sorted(questions, key=lambda x: x.question_order):
+        doc.add_paragraph(f"{q.question_order}. {q.question_text}")
+        if quiz.quiz_type == QuizType.MULTIPLE_CHOICE and q.options:
             for i, option in enumerate(q.options):
                 letter = chr(ord("A") + i)
                 doc.add_paragraph(f"    {letter}. {option}")
-        elif quiz.quiz_type == "true_false":
+        elif quiz.quiz_type == QuizType.TRUE_FALSE:
             doc.add_paragraph("    A. True")
             doc.add_paragraph("    B. False")
 
     doc.add_heading("Answer Key", level=2)
 
-    sorted_questions = sorted(questions, key=lambda x: x.order)
+    sorted_questions = sorted(questions, key=lambda x: x.question_order)
     total = len(sorted_questions)
     half = (total + 1) // 2  # left column gets the extra one if odd
 
@@ -47,11 +47,11 @@ def export_quiz(quiz: Quiz, questions: list[QuizQuestion]) -> bytes:
 
     for i in range(half):
         left_q = left_col[i]
-        table.rows[i].cells[0].text = f"{left_q.order}. {left_q.correct_answer or ''}"
+        table.rows[i].cells[0].text = f"{left_q.question_order}. {left_q.correct_answer or ''}"
 
         if i < len(right_col):
             right_q = right_col[i]
-            table.rows[i].cells[1].text = f"{right_q.order}. {right_q.correct_answer or ''}"
+            table.rows[i].cells[1].text = f"{right_q.question_order}. {right_q.correct_answer or ''}"
 
     buffer = io.BytesIO()
     doc.save(buffer)

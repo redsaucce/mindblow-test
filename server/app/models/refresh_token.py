@@ -17,7 +17,10 @@ class RefreshToken(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    token: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    # Stores a hash of the token, not the raw value — see MagicLinkToken for
+    # the same rationale. The raw value only ever exists in the client's
+    # cookie; the DB can confirm a match but never reveal the original.
+    token_hash: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )

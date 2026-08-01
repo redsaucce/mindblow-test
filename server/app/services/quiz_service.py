@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import GenerationRateLimitedError, QuizNotFoundError
+from app.models.activity_log import ActivityType
 from app.models.quiz_data import Quiz
 from app.models.quiz_question import QuizQuestion
 from app.schemas.quiz import QuizType
@@ -62,7 +63,9 @@ async def get_quiz_with_questions(
 ) -> tuple[Quiz, list[QuizQuestion]]:
     quiz = await get_quiz(db, user_id, quiz_id)
     result = await db.execute(
-        select(QuizQuestion).where(QuizQuestion.quiz_id == quiz.id).order_by(QuizQuestion.order)
+        select(QuizQuestion)
+        .where(QuizQuestion.quiz_id == quiz.id)
+        .order_by(QuizQuestion.question_order)
     )
     questions = list(result.scalars().all())
     return quiz, questions
@@ -79,7 +82,7 @@ async def delete_quiz(db: AsyncSession, user_id: str, user_email: str, quiz_id: 
         db,
         email=user_email,
         description=f'Deleted quiz "{title}"',
-        type="quiz_deleted",
+        type=ActivityType.QUIZ_DELETED,
     )
 
 
@@ -128,7 +131,7 @@ async def generate_quiz(
                 question_text=q.text,
                 options=q.options,
                 correct_answer=q.answer,
-                order=q.number,
+                question_order=q.number,
             )
         )
 
@@ -139,7 +142,7 @@ async def generate_quiz(
         db,
         email=user_email,
         description=f'Generated quiz "{title}"',
-        type="generated",
+        type=ActivityType.GENERATED,
     )
 
     return quiz

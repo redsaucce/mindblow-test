@@ -2,10 +2,10 @@ import nh3
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.activity_log import ActivityLog
+from app.models.activity_log import ActivityLog, ActivityType
 
 
-async def log_action(db: AsyncSession, email: str, description: str, type: str) -> None:
+async def log_action(db: AsyncSession, email: str, description: str, type: ActivityType) -> None:
     entry = ActivityLog(email=email, description=nh3.clean(description), type=type)
     db.add(entry)
     await db.commit()

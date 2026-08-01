@@ -22,10 +22,6 @@ def upgrade() -> None:
     """Upgrade schema."""
 
     # --- activity_log.type: VARCHAR -> enum, cast existing values ---
-    # Some existing rows contain 'announcement_sent', a stale/deprecated
-    # value that isn't part of the current activity_type set and has no
-    # equivalent to map to. These rows are historical log entries, not
-    # data the app depends on, so they're deleted rather than migrated.
     op.execute("DELETE FROM activity_log WHERE type = 'announcement_sent'")
     # alter_column with type_=sa.Enum(...) does NOT create the Postgres enum
     # type for us — it assumes it already exists. Create it explicitly first.
@@ -164,6 +160,3 @@ def downgrade() -> None:
     )
     # Now that no column references it, drop the Postgres enum type itself.
     activity_type_enum.drop(op.get_bind(), checkfirst=True)
-    # NOTE: rows with type='announcement_sent' deleted in upgrade() cannot
-    # be restored here — that data is gone, same one-way-trip caveat as the
-    # wiped magic_link_tokens/refresh_tokens rows above.
