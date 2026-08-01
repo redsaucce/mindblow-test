@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import GenerationRateLimitedError, QuizNotFoundError
 from app.models.activity_log import ActivityType
-from app.models.quiz_data import Quiz
+from app.models.quiz_data import Quiz, QuizType as ModelQuizType
 from app.models.quiz_question import QuizQuestion
 from app.schemas.quiz import QuizType
 from app.services import ai_service, document_service
@@ -119,7 +119,7 @@ async def generate_quiz(
         title=title,
         direction=generated.direction,
         question_count=question_count,
-        quiz_type=quiz_type,
+        quiz_type=ModelQuizType(quiz_type.value),
     )
     db.add(quiz)
     await db.flush()
