@@ -62,7 +62,7 @@ function HeroSkeleton() {
             </div>
 
             {/* Subtitle */}
-            <div className="mx-auto mb-10 flex max-w-2xl flex-col items-center gap-2 lg:items-start">
+            <div className="mx-auto mb-10 flex max-w-2xl flex-col items-center gap-2 lg:mx-0 lg:items-start">
               <SkeletonBlock className="h-4 w-full" />
               <SkeletonBlock className="h-4 w-11/12" />
               <SkeletonBlock className="h-4 w-2/3" />
