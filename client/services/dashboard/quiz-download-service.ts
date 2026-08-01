@@ -1,4 +1,4 @@
-import { ApiError } from "@/services/api-client";
+import { ApiError, tryRefresh } from "@/services/api-client";
 
 export interface DownloadResult {
   blob: Blob;
@@ -12,11 +12,22 @@ function extractFilename(contentDisposition: string | null, fallback: string): s
   return match ? match[1] : fallback;
 }
 
-export async function downloadQuizzes(ids: string[]): Promise<DownloadResult> {
+async function fetchDownload(ids: string[]): Promise<Response> {
   const query = ids.map(encodeURIComponent).join(",");
-  const response = await fetch(`/api/quizzes/download?ids=${query}`, {
+  return fetch(`/api/quizzes/download?ids=${query}`, {
     credentials: "include",
   });
+}
+
+export async function downloadQuizzes(ids: string[], isRetry = false): Promise<DownloadResult> {
+  const response = await fetchDownload(ids);
+
+  if (response.status === 401 && !isRetry) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      return downloadQuizzes(ids, true);
+    }
+  }
 
   if (!response.ok) {
     let detail = "Download failed. Please try again.";
