@@ -144,14 +144,16 @@ function ProcessIllustration() {
 export default function Hero({ isLoading }: { isLoading?: boolean } = {}) {
   const { openAuth } = useModal();
 
-  // Falls back to a "mounted" flag so the skeleton shows briefly on
-  // initial page load even if no external isLoading prop is passed in.
-  const [mounted, setMounted] = useState(false);
+  // Falls back to a timed skeleton so the loading state reads as
+  // intentional rather than a hydration flicker, even when no external
+  // isLoading prop is passed in.
+  const [minDurationElapsed, setMinDurationElapsed] = useState(false);
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMinDurationElapsed(true), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
-  const showSkeleton = isLoading ?? !mounted;
+  const showSkeleton = isLoading ?? !minDurationElapsed;
 
   if (showSkeleton) {
     return <HeroSkeleton />;
