@@ -12,7 +12,7 @@ import { useModal } from "@/hooks/use-modal";
 function SkeletonBlock({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gradient-to-r from-emerald-100 to-green-100 ${className}`}
+      className={`animate-pulse rounded-md bg-gradient-to-r from-emerald-200 to-green-200 ${className}`}
     />
   );
 }
