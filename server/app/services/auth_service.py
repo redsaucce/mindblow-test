@@ -1,169 +1,246 @@
-"""add relationships, enums, constraints, token hashing, singleton
+import secrets
+from datetime import datetime, timedelta, timezone
 
-Revision ID: 1bc69d631881
-Revises: f277522211d3
-Create Date: 2026-08-01 20:42:05.993913
+from sqlalchemy import select, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
-"""
-from typing import Sequence, Union
+from app.config import settings
+from app.core.exceptions import ExpiredTokenError, InvalidTokenError, RateLimitedError
+from app.core.security import create_access_token, generate_refresh_token, hash_token
+from app.models.activity_log import ActivityType
+from app.models.magic_link_token import MagicLinkToken
+from app.models.refresh_token import RefreshToken
+from app.models.revoked_token import RevokedToken
+from app.models.user_data import Role, User
+from app.services.activity_log_service import log_action
+from app.services.mail_service import send_magic_link_email
 
-from alembic import op
-import sqlalchemy as sa
+# How long a just-rotated refresh token is still tolerated if presented again.
+# Concurrent tabs/requests can race to refresh the same token; the first to
+# arrive rotates it and the second shows up moments later holding the now-dead
+# token. Without this window that reuse looks identical to a stolen token
+# being replayed, and gets treated as theft (nukes every session for the
+# user). Within the window we instead treat it as a benign race and issue a
+# fresh token rather than escalating.
+REFRESH_REUSE_GRACE_SECONDS = 10
 
 
-# revision identifiers, used by Alembic.
-revision: str = '1bc69d631881'
-down_revision: Union[str, Sequence[str], None] = 'f277522211d3'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+async def request_magic_link(db: AsyncSession, email: str) -> None:
+    normalized_email = email.strip().lower()
 
+    result = await db.execute(select(User).where(User.email == normalized_email))
+    user = result.scalar_one_or_none()
+    if user is None:
+        user = User(
+            email=normalized_email,
+            role=Role.USER,
+        )
+        db.add(user)
+        await db.flush()
 
-def upgrade() -> None:
-    """Upgrade schema."""
-
-    # --- activity_log.type: VARCHAR -> enum, cast existing values ---
-    # Some existing rows contain 'announcement_sent', a stale/deprecated
-    # value that isn't part of the current activity_type set and has no
-    # equivalent to map to. These rows are historical log entries, not
-    # data the app depends on, so they're deleted rather than migrated.
-    op.execute("DELETE FROM activity_log WHERE type = 'announcement_sent'")
-    # alter_column with type_=sa.Enum(...) does NOT create the Postgres enum
-    # type for us — it assumes it already exists. Create it explicitly first.
-    activity_type_enum = sa.Enum(
-        'registered', 'signed_in', 'generated', 'downloaded', 'quiz_deleted', 'user_deleted',
-        name='activity_type',
+    result = await db.execute(
+        select(MagicLinkToken).where(
+            MagicLinkToken.user_id == user.id,
+            MagicLinkToken.used_at.is_(None),
+            MagicLinkToken.expires_at > datetime.now(timezone.utc),
+        )
     )
-    activity_type_enum.create(op.get_bind(), checkfirst=True)
-    op.alter_column(
-        'activity_log', 'type',
-        existing_type=sa.VARCHAR(),
-        type_=activity_type_enum,
-        existing_nullable=False,
-        postgresql_using='type::activity_type',
+    existing_token = result.scalar_one_or_none()
+    if existing_token is not None:
+        raise RateLimitedError()
+
+    token_value = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.magic_link_expire_minutes)
+
+    token = MagicLinkToken(
+        user_id=user.id,
+        token_hash=hash_token(token_value),
+        expires_at=expires_at,
     )
+    db.add(token)
+    await db.commit()
 
-    # --- magic_link_tokens: Path B — wipe existing rows, then add NOT NULL columns ---
-    # Existing magic link tokens are short-lived (a few minutes) and inherently
-    # disposable — deleting them just means any in-flight, unclicked link
-    # becomes invalid and the user has to request a new one. Nothing of
-    # lasting value is lost.
-    op.execute("DELETE FROM magic_link_tokens")
-    op.add_column('magic_link_tokens', sa.Column('user_id', sa.UUID(), nullable=False))
-    op.add_column('magic_link_tokens', sa.Column('token_hash', sa.String(), nullable=False))
-    op.add_column('magic_link_tokens', sa.Column('created_at', sa.DateTime(timezone=True), nullable=False))
-    op.drop_index(op.f('ix_magic_link_tokens_email'), table_name='magic_link_tokens')
-    op.drop_index(op.f('ix_magic_link_tokens_token'), table_name='magic_link_tokens')
-    op.create_index(op.f('ix_magic_link_tokens_token_hash'), 'magic_link_tokens', ['token_hash'], unique=True)
-    op.create_index(op.f('ix_magic_link_tokens_user_id'), 'magic_link_tokens', ['user_id'], unique=False)
-    op.create_foreign_key(None, 'magic_link_tokens', 'users', ['user_id'], ['id'], ondelete='CASCADE')
-    op.drop_column('magic_link_tokens', 'email')
-    op.drop_column('magic_link_tokens', 'token')
+    await send_magic_link_email(to_email=normalized_email, token=token_value)
 
-    # --- prompt_context: singleton enforcement ---
-    op.add_column('prompt_context', sa.Column('singleton_key', sa.Integer(), nullable=False, server_default='1'))
-    op.create_unique_constraint(None, 'prompt_context', ['singleton_key'])
-    # server_default only needed to satisfy NOT NULL on the existing singleton
-    # row during this migration; the model's application-side default=1
-    # covers all future inserts, so drop the server default afterward to
-    # avoid a second, redundant source of truth.
-    op.alter_column('prompt_context', 'singleton_key', server_default=None)
 
-    # --- quiz_question: rename order -> question_order, backfill required (real quiz content) ---
-    op.add_column('quiz_question', sa.Column('question_order', sa.Integer(), nullable=True))
-    op.execute('UPDATE quiz_question SET question_order = "order"')
-    op.alter_column('quiz_question', 'question_order', nullable=False)
-    op.create_unique_constraint('uq_quiz_question_quiz_id_order', 'quiz_question', ['quiz_id', 'question_order'])
-    op.create_check_constraint('ck_quiz_question_order_positive', 'quiz_question', 'question_order > 0')
-    op.drop_column('quiz_question', 'order')
-
-    # --- quizzes: VARCHAR -> enum, cast existing values, plus positivity check ---
-    quiz_type_enum = sa.Enum(
-        'multiple_choice', 'identification', 'true_false',
-        name='quiz_type',
+async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, str, str]:
+    """Returns (access_token, refresh_token, role) on success."""
+    result = await db.execute(
+        select(MagicLinkToken).where(MagicLinkToken.token_hash == hash_token(token_value))
     )
-    quiz_type_enum.create(op.get_bind(), checkfirst=True)
-    op.alter_column(
-        'quizzes', 'quiz_type',
-        existing_type=sa.VARCHAR(),
-        type_=quiz_type_enum,
-        existing_nullable=False,
-        postgresql_using='quiz_type::quiz_type',
+    token = result.scalar_one_or_none()
+
+    if token is None or token.used_at is not None:
+        raise InvalidTokenError()
+
+    if token.expires_at < datetime.now(timezone.utc):
+        raise ExpiredTokenError()
+
+    result = await db.execute(select(User).where(User.id == token.user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise InvalidTokenError()
+
+    # Distinguish a genuine first-ever verification from a returning sign-in:
+    # this is the first time this user has ever completed one if no other
+    # token for them has been used before. Checked before marking the current
+    # token used below, so it can't count itself.
+    prior_used_result = await db.execute(
+        select(MagicLinkToken.id).where(
+            MagicLinkToken.user_id == user.id, MagicLinkToken.used_at.is_not(None)
+        )
     )
-    op.create_check_constraint('ck_quizzes_question_count_positive', 'quizzes', 'question_count > 0')
+    is_first_verification = prior_used_result.first() is None
 
-    # --- refresh_tokens: Path B — wipe existing rows (forces re-login), then add NOT NULL column ---
-    # Existing refresh tokens can't be un-reversed into a hash without the
-    # plaintext being logged somewhere first, which defeats the point.
-    # Wiping forces every active session to re-authenticate via magic link
-    # on next refresh attempt — a one-time inconvenience, not a data loss.
-    op.execute("DELETE FROM refresh_tokens")
-    op.add_column('refresh_tokens', sa.Column('token_hash', sa.String(), nullable=False))
-    op.drop_index(op.f('ix_refresh_tokens_token'), table_name='refresh_tokens')
-    op.create_index(op.f('ix_refresh_tokens_token_hash'), 'refresh_tokens', ['token_hash'], unique=True)
-    op.drop_column('refresh_tokens', 'token')
+    token.used_at = datetime.now(timezone.utc)
+
+    access_token = create_access_token(user_id=str(user.id), role=user.role)
+    refresh_token_value = await _issue_refresh_token(db, str(user.id))
+
+    await db.commit()
+
+    if is_first_verification:
+        await log_action(
+            db,
+            email=user.email,
+            description=f"{user.email} registered",
+            type=ActivityType.REGISTERED,
+        )
+    else:
+        await log_action(
+            db,
+            email=user.email,
+            description=f"{user.email} signed in",
+            type=ActivityType.SIGNED_IN,
+        )
+
+    return access_token, refresh_token_value, user.role
 
 
-def downgrade() -> None:
-    """Downgrade schema."""
-    op.add_column('refresh_tokens', sa.Column('token', sa.VARCHAR(), autoincrement=False, nullable=True))
-    op.drop_index(op.f('ix_refresh_tokens_token_hash'), table_name='refresh_tokens')
-    op.create_index(op.f('ix_refresh_tokens_token'), 'refresh_tokens', ['token'], unique=True)
-    op.drop_column('refresh_tokens', 'token_hash')
-    # NOTE: downgrade cannot restore wiped refresh_tokens/magic_link_tokens
-    # rows or the original plaintext token values — Path B is a one-way trip
-    # for that data. 'token' is left nullable=True here (unlike the original
-    # autogenerate output) since there's nothing to backfill it with.
+async def _issue_refresh_token(db: AsyncSession, user_id: str) -> str:
+    refresh_token_value = generate_refresh_token()
+    row = RefreshToken(user_id=user_id, token_hash=hash_token(refresh_token_value))
+    db.add(row)
+    return refresh_token_value
 
-    op.drop_constraint('ck_quizzes_question_count_positive', 'quizzes', type_='check')
-    quiz_type_enum = sa.Enum(
-        'multiple_choice', 'identification', 'true_false',
-        name='quiz_type',
+
+async def _revoke_all_refresh_tokens_for_user(db: AsyncSession, user_id: str) -> None:
+    """Called when a dead (already-rotated) refresh token is presented again —
+    the standard signal that a token was stolen and is being replayed
+    alongside the legitimate rotated session. Kills every outstanding
+    refresh token for the user so both the attacker and the legitimate
+    session are forced to re-authenticate via a fresh magic link."""
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None)
+        )
     )
-    op.alter_column(
-        'quizzes', 'quiz_type',
-        existing_type=quiz_type_enum,
-        type_=sa.VARCHAR(),
-        existing_nullable=False,
+    for row in result.scalars().all():
+        row.revoked_at = datetime.now(timezone.utc)
+
+
+async def refresh_session(db: AsyncSession, refresh_token_value: str) -> tuple[str, str, str]:
+    """Rotates the refresh token and issues a fresh access token.
+    Returns (access_token, new_refresh_token, role)."""
+    result = await db.execute(
+        select(RefreshToken)
+        .where(RefreshToken.token_hash == hash_token(refresh_token_value))
+        .with_for_update()
     )
-    # Now that no column references it, drop the Postgres enum type itself.
-    quiz_type_enum.drop(op.get_bind(), checkfirst=True)
+    row = result.scalar_one_or_none()
 
-    op.add_column('quiz_question', sa.Column('order', sa.INTEGER(), autoincrement=False, nullable=True))
-    op.execute('UPDATE quiz_question SET "order" = question_order')
-    op.alter_column('quiz_question', 'order', nullable=False)
-    op.drop_constraint('ck_quiz_question_order_positive', 'quiz_question', type_='check')
-    op.drop_constraint('uq_quiz_question_quiz_id_order', 'quiz_question', type_='unique')
-    op.drop_column('quiz_question', 'question_order')
+    if row is None:
+        raise InvalidTokenError()
 
-    op.drop_constraint(None, 'prompt_context', type_='unique')
-    op.drop_column('prompt_context', 'singleton_key')
+    if row.revoked_at is not None:
+        reused_within_grace = (
+            datetime.now(timezone.utc) - row.revoked_at
+            <= timedelta(seconds=REFRESH_REUSE_GRACE_SECONDS)
+        )
+        if not reused_within_grace:
+            # This exact token was already rotated away, and well outside the
+            # grace window — treat it as a stolen copy being replayed: kill
+            # every refresh token for this user and force a fresh login.
+            await _revoke_all_refresh_tokens_for_user(db, str(row.user_id))
+            await db.commit()
+            raise InvalidTokenError()
 
-    op.add_column('magic_link_tokens', sa.Column('token', sa.VARCHAR(), autoincrement=False, nullable=True))
-    op.add_column('magic_link_tokens', sa.Column('email', sa.VARCHAR(), autoincrement=False, nullable=True))
-    # NOTE: token/email cannot be backfilled here — the underlying rows were
-    # deleted in upgrade() (Path B). Left nullable=True since there's no
-    # source data to satisfy a NOT NULL constraint on downgrade.
-    op.drop_constraint(None, 'magic_link_tokens', type_='foreignkey')
-    op.drop_index(op.f('ix_magic_link_tokens_user_id'), table_name='magic_link_tokens')
-    op.drop_index(op.f('ix_magic_link_tokens_token_hash'), table_name='magic_link_tokens')
-    op.create_index(op.f('ix_magic_link_tokens_token'), 'magic_link_tokens', ['token'], unique=True)
-    op.create_index(op.f('ix_magic_link_tokens_email'), 'magic_link_tokens', ['email'], unique=False)
-    op.drop_column('magic_link_tokens', 'created_at')
-    op.drop_column('magic_link_tokens', 'token_hash')
-    op.drop_column('magic_link_tokens', 'user_id')
+        # Likely a benign race (e.g. two tabs refreshing around the same
+        # time) rather than theft. Nothing links this dead row to whichever
+        # token superseded it, so rather than guess we issue this caller a
+        # fresh token of their own — safe, just means an extra live token
+        # for the user instead of reusing the sibling request's.
+        result = await db.execute(select(User).where(User.id == row.user_id))
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise InvalidTokenError()
 
-    activity_type_enum = sa.Enum(
-        'registered', 'signed_in', 'generated', 'downloaded', 'quiz_deleted', 'user_deleted',
-        name='activity_type',
+        new_refresh_token_value = await _issue_refresh_token(db, str(user.id))
+        access_token = create_access_token(user_id=str(user.id), role=user.role)
+        await db.commit()
+        return access_token, new_refresh_token_value, user.role
+
+    cutoff = row.last_used_at + timedelta(days=settings.refresh_token_expire_days)
+    if datetime.now(timezone.utc) > cutoff:
+        row.revoked_at = datetime.now(timezone.utc)
+        await db.commit()
+        raise ExpiredTokenError()
+
+    result = await db.execute(select(User).where(User.id == row.user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        row.revoked_at = datetime.now(timezone.utc)
+        await db.commit()
+        raise InvalidTokenError()
+
+    # Rotation: mark the old row revoked (kept, not deleted, so a later
+    # replay of this same token can be recognized as reuse) and issue a
+    # brand new one.
+    row.revoked_at = datetime.now(timezone.utc)
+    new_refresh_token_value = await _issue_refresh_token(db, str(user.id))
+    access_token = create_access_token(user_id=str(user.id), role=user.role)
+
+    await db.commit()
+
+    return access_token, new_refresh_token_value, user.role
+
+
+async def logout(db: AsyncSession, refresh_token_value: str | None) -> None:
+    """Always terminates the session server-side, regardless of activity state."""
+    if refresh_token_value is None:
+        return
+    await db.execute(
+        delete(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token_value))
     )
-    op.alter_column(
-        'activity_log', 'type',
-        existing_type=activity_type_enum,
-        type_=sa.VARCHAR(),
-        existing_nullable=False,
-    )
-    # Now that no column references it, drop the Postgres enum type itself.
-    activity_type_enum.drop(op.get_bind(), checkfirst=True)
-    # NOTE: rows with type='announcement_sent' deleted in upgrade() cannot
-    # be restored here — that data is gone, same one-way-trip caveat as the
-    # wiped magic_link_tokens/refresh_tokens rows above.
+    await db.commit()
+
+
+async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+
+async def is_token_revoked(db: AsyncSession, jti: str | None) -> bool:
+    if jti is None:
+        # Tokens without a jti predate this feature (or are malformed) — treat
+        # as not-revoked rather than raising, since revocation is an addition
+        # on top of normal expiry/signature checks, not a replacement for it.
+        return False
+    result = await db.execute(select(RevokedToken).where(RevokedToken.jti == jti))
+    return result.scalar_one_or_none() is not None
+
+
+async def revoke_access_token(db: AsyncSession, jti: str, expires_at: datetime) -> None:
+    db.add(RevokedToken(jti=jti, expires_at=expires_at))
+    await db.commit()
+
+
+async def revoke_all_access_tokens_for_user(db: AsyncSession, user_id: str) -> None:
+    """Best-effort mass revocation: since access tokens are stateless JWTs, we
+    can't enumerate a user's currently-outstanding jtis. Session-terminating
+    actions (logout, account deletion) revoke the specific token presented at
+    that time via revoke_access_token; this helper is a placeholder for a
+    future per-user revocation epoch if a "log out everywhere" feature is
+    ever needed. Currently a no-op, kept as an explicit extension point rather
+    than silently absent."""
+    return None
