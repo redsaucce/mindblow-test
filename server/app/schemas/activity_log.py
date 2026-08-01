@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 ActivityType = Literal[
     "registered",
+    "signed_in",
     "generated",
     "downloaded",
     "quiz_deleted",

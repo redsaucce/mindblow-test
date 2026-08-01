@@ -2,6 +2,7 @@ import { apiClient } from "@/services/api-client";
 
 export type ActivityType =
   | "registered"
+  | "signed_in"
   | "generated"
   | "downloaded"
   | "quiz_deleted"

@@ -78,6 +78,17 @@ async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, st
     if user is None:
         raise InvalidTokenError()
 
+    # Distinguish a genuine first-ever verification from a returning sign-in:
+    # this is the first time this email has ever completed one if no other
+    # token for it has been used before. Checked before marking the current
+    # token used below, so it can't count itself.
+    prior_used_result = await db.execute(
+        select(MagicLinkToken.id).where(
+            MagicLinkToken.email == token.email, MagicLinkToken.used_at.is_not(None)
+        )
+    )
+    is_first_verification = prior_used_result.first() is None
+
     token.used_at = datetime.now(timezone.utc)
 
     access_token = create_access_token(user_id=str(user.id), role=user.role)
@@ -85,12 +96,20 @@ async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, st
 
     await db.commit()
 
-    await log_action(
-        db,
-        email=user.email,
-        description=f"{user.email} registered",
-        type="registered",
-    )
+    if is_first_verification:
+        await log_action(
+            db,
+            email=user.email,
+            description=f"{user.email} registered",
+            type="registered",
+        )
+    else:
+        await log_action(
+            db,
+            email=user.email,
+            description=f"{user.email} signed in",
+            type="signed_in",
+        )
 
     return access_token, refresh_token_value, user.role
 
@@ -121,7 +140,9 @@ async def refresh_session(db: AsyncSession, refresh_token_value: str) -> tuple[s
     """Rotates the refresh token and issues a fresh access token.
     Returns (access_token, new_refresh_token, role)."""
     result = await db.execute(
-        select(RefreshToken).where(RefreshToken.token == refresh_token_value)
+        select(RefreshToken)
+        .where(RefreshToken.token == refresh_token_value)
+        .with_for_update()
     )
     row = result.scalar_one_or_none()
 
@@ -129,14 +150,32 @@ async def refresh_session(db: AsyncSession, refresh_token_value: str) -> tuple[s
         raise InvalidTokenError()
 
     if row.revoked_at is not None:
-        # This exact token was already rotated away once before. Being
-        # presented again now means either a stolen copy is being replayed,
-        # or a client retried a request after its rotation already
-        # succeeded. We can't tell those apart, so we treat it as theft:
-        # kill every refresh token for this user and force a fresh login.
-        await _revoke_all_refresh_tokens_for_user(db, str(row.user_id))
+        reused_within_grace = (
+            datetime.now(timezone.utc) - row.revoked_at
+            <= timedelta(seconds=REFRESH_REUSE_GRACE_SECONDS)
+        )
+        if not reused_within_grace:
+            # This exact token was already rotated away, and well outside the
+            # grace window — treat it as a stolen copy being replayed: kill
+            # every refresh token for this user and force a fresh login.
+            await _revoke_all_refresh_tokens_for_user(db, str(row.user_id))
+            await db.commit()
+            raise InvalidTokenError()
+
+        # Likely a benign race (e.g. two tabs refreshing around the same
+        # time) rather than theft. Nothing links this dead row to whichever
+        # token superseded it, so rather than guess we issue this caller a
+        # fresh token of their own — safe, just means an extra live token
+        # for the user instead of reusing the sibling request's.
+        result = await db.execute(select(User).where(User.id == row.user_id))
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise InvalidTokenError()
+
+        new_refresh_token_value = await _issue_refresh_token(db, str(user.id))
+        access_token = create_access_token(user_id=str(user.id), role=user.role)
         await db.commit()
-        raise InvalidTokenError()
+        return access_token, new_refresh_token_value, user.role
 
     cutoff = row.last_used_at + timedelta(days=settings.refresh_token_expire_days)
     if datetime.now(timezone.utc) > cutoff:

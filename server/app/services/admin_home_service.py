@@ -57,7 +57,7 @@ async def _line_chart(db: AsyncSession) -> list[dict]:
         .order_by(month_bucket)
     )
     return [
-        {"month": row.month_bucket.strftime("%b"), "quizzes": row.quizzes}
+        {"month": row.month_bucket.strftime("%b %Y"), "quizzes": row.quizzes}
         for row in result.all()
     ]
 

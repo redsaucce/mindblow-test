@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, verify_csrf
+from app.core.exceptions import QuizNotFoundError
 from app.models.user_data import User
 from app.schemas.quiz import DeleteQuizResponse, QuizListResponse, QuizResponse, QuizType
 from app.services.document_export_service import export_quiz, export_quizzes_zip
@@ -92,18 +93,36 @@ async def download_quizzes(
             headers={"Content-Disposition": _content_disposition(f"{quiz.title}.docx")},
         )
 
-    quizzes_with_questions = [
-        await get_quiz_with_questions(db, str(user.id), qid) for qid in quiz_ids
-    ]
-    zip_bytes, failed_titles = export_quizzes_zip(quizzes_with_questions)
+    # Fetch each requested quiz individually rather than failing the whole
+    # batch on the first missing/not-owned id. A quiz can easily disappear
+    # between the user selecting it and clicking download (deleted in
+    # another tab, id typo, etc.) — that shouldn't cost them the other
+    # quizzes in the same batch. Missing ids are reported the same way
+    # export_quizzes_zip already reports per-quiz export failures, so the
+    # frontend's existing X-Failed-Titles handling covers both cases
+    # uniformly.
+    quizzes_with_questions = []
+    failed_titles: list[str] = []
+    for qid in quiz_ids:
+        try:
+            quizzes_with_questions.append(await get_quiz_with_questions(db, str(user.id), qid))
+        except QuizNotFoundError:
+            # No title available since the quiz was never fetched — a raw
+            # id isn't meaningful to show in the UI, so use a readable
+            # placeholder instead of leaking a UUID into failedTitles.
+            failed_titles.append("Quiz no longer available")
+
+    zip_bytes, export_failed_titles = export_quizzes_zip(quizzes_with_questions)
+    failed_titles.extend(export_failed_titles)
 
     headers = {"Content-Disposition": 'attachment; filename="quizzes.zip"'}
     if failed_titles:
         # Same Latin-1 restriction as Content-Disposition applies to any
         # custom header — encode each title so a non-ASCII quiz title
-        # (curly quotes, etc.) can't crash this response.
+        # (curly quotes, etc.) can't crash this response. Exposing this
+        # header to the frontend is configured centrally in main.py's
+        # CORSMiddleware, not per-response.
         headers["X-Failed-Titles"] = ",".join(quote(title) for title in failed_titles)
-        headers["Access-Control-Expose-Headers"] = "X-Failed-Titles"
 
     return StreamingResponse(
         iter([zip_bytes]),
