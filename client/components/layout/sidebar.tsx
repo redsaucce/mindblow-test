@@ -140,7 +140,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </span>
                 )}
               </div>
-              <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+              <ChevronUp
+                className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                  accountOpen ? "rotate-0" : "rotate-180"
+                }`}
+              />
             </button>
 
             {accountOpen && (
