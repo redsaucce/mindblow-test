@@ -242,6 +242,9 @@ export default function Home() {
   const [uploadError, setUploadError] = useState("");
   const [quizType, setQuizType] = useState<string>(copy.quizType.options[0].value);
   const [quantity, setQuantity] = useState<number>(copy.quantity.min);
+  const [quantityInput, setQuantityInput] = useState<string>(
+    String(copy.quantity.min)
+  );
   const [status, setStatus] = useState<GenerateStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -438,16 +441,27 @@ export default function Home() {
                 <span className="text-xs text-slate-400">{copy.quantity.hint}</span>
               </div>
               <input
-                type="number"
-                min={copy.quantity.min}
-                max={copy.quantity.max}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                onBlur={() =>
-                  setQuantity((prev) =>
-                    Math.min(copy.quantity.max, Math.max(copy.quantity.min, prev))
-                  )
-                }
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantityInput}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const digitsOnly = e.target.value.replace(/[^0-9]/g, "");
+                  const noLeadingZeros = digitsOnly.replace(/^0+(?=\d)/, "");
+                  setQuantityInput(noLeadingZeros);
+                }}
+                onBlur={() => {
+                  const parsed = parseInt(quantityInput, 10);
+                  const clamped = Number.isNaN(parsed)
+                    ? copy.quantity.min
+                    : Math.min(
+                        copy.quantity.max,
+                        Math.max(copy.quantity.min, parsed)
+                      );
+                  setQuantity(clamped);
+                  setQuantityInput(String(clamped));
+                }}
                 className="w-full sm:w-40 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
               />
             </div>
