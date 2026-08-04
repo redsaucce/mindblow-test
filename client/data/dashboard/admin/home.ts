@@ -1,6 +1,6 @@
 export const adminHomeContent = {
   stats: {
-    totalUsers: { label: "TOTAL USERS", description: "Registered accounts" },
+    totalUsers: { label: "TOTAL USERS", description: "Active accounts" },
     quizzesGenerated: { label: "QUIZZES GENERATED", description: "All time" },
     avgQuestionsPerQuiz: { label: "AVG. QUESTIONS", description: "Per quiz" },
   },
