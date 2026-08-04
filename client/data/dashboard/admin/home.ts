@@ -2,7 +2,7 @@ export const adminHomeContent = {
   stats: {
     totalUsers: { label: "TOTAL USERS", description: "Registered accounts" },
     quizzesGenerated: { label: "QUIZZES GENERATED", description: "All time" },
-    downloadedQuizzes: { label: "DOWNLOADED QUIZZES", description: "All time" },
+    avgQuestionsPerQuiz: { label: "AVG. QUESTIONS", description: "Per quiz" },
   },
   trend: {
     noPreviousData: "No previous data",

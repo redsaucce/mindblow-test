@@ -46,6 +46,35 @@ async def _stat_pair(db: AsyncSession, model, date_column) -> dict[str, int | No
     return {"current": current, "previous": previous}
 
 
+async def _avg_in_range(db: AsyncSession, start: datetime, end: datetime) -> float | None:
+    result = await db.execute(
+        select(func.avg(Quiz.question_count)).where(
+            Quiz.created_at >= start, Quiz.created_at < end
+        )
+    )
+    avg = result.scalar_one()
+    return float(avg) if avg is not None else None
+
+
+async def _avg_questions_per_quiz(db: AsyncSession) -> dict[str, int | None]:
+    """Average question_count across quizzes, current month vs last month.
+
+    Rounded to the nearest whole question for display — a "12.4 questions"
+    stat card reads oddly, and the underlying value is a count of discrete
+    items anyway. Rounding happens here rather than on the frontend so the
+    trend math and the displayed value use the same rounded figure.
+    """
+    now = datetime.now(timezone.utc)
+    this_start, this_end, last_start, last_end = _month_bounds(now)
+
+    current_avg = await _avg_in_range(db, this_start, this_end)
+    previous_avg = await _avg_in_range(db, last_start, last_end)
+
+    current = round(current_avg) if current_avg is not None else 0
+    previous = round(previous_avg) if previous_avg is not None else None
+    return {"current": current, "previous": previous}
+
+
 async def _line_chart(db: AsyncSession) -> list[dict]:
     month_bucket = func.date_trunc("month", Quiz.created_at)
     result = await db.execute(
@@ -75,11 +104,12 @@ async def _donut_chart(db: AsyncSession) -> list[dict]:
 async def get_stats(db: AsyncSession) -> dict:
     total_users = await _stat_pair(db, User, User.created_at)
     quizzes_generated = await _stat_pair(db, Quiz, Quiz.created_at)
+    avg_questions_per_quiz = await _avg_questions_per_quiz(db)
 
     return {
         "totalUsers": total_users,
         "quizzesGenerated": quizzes_generated,
-        "downloadedQuizzes": {"current": 0, "previous": None},
+        "avgQuestionsPerQuiz": avg_questions_per_quiz,
         "lineChart": await _line_chart(db),
         "donutChart": await _donut_chart(db),
     }

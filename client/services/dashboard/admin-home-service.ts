@@ -18,7 +18,7 @@ export interface DonutChartSlice {
 interface AdminStatsResponse {
   totalUsers: StatData;
   quizzesGenerated: StatData;
-  downloadedQuizzes: StatData;
+  avgQuestionsPerQuiz: StatData;
   lineChart: LineChartPoint[];
   donutChart: DonutChartSlice[];
 }

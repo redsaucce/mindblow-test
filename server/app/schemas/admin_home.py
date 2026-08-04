@@ -19,6 +19,6 @@ class DonutChartSlice(BaseModel):
 class AdminStatsResponse(BaseModel):
     totalUsers: StatPair
     quizzesGenerated: StatPair
-    downloadedQuizzes: StatPair
+    avgQuestionsPerQuiz: StatPair
     lineChart: list[LineChartPoint]
     donutChart: list[DonutChartSlice]

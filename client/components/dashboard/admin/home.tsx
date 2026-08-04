@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   User,
   FileText,
-  Download,
+  ListOrdered,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -214,7 +214,7 @@ export default function Home() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [totalUsers, setTotalUsers] = useState<StatData>(EMPTY_STAT);
   const [quizzesGenerated, setQuizzesGenerated] = useState<StatData>(EMPTY_STAT);
-  const [downloadedQuizzes, setDownloadedQuizzes] = useState<StatData>(EMPTY_STAT);
+  const [avgQuestionsPerQuiz, setAvgQuestionsPerQuiz] = useState<StatData>(EMPTY_STAT);
   const [lineChartData, setLineChartData] = useState<LineChartPoint[]>([]);
   const [donutChartData, setDonutChartData] = useState<DonutChartSlice[]>([]);
 
@@ -226,7 +226,7 @@ export default function Home() {
         if (cancelled) return;
         setTotalUsers(stats.totalUsers);
         setQuizzesGenerated(stats.quizzesGenerated);
-        setDownloadedQuizzes(stats.downloadedQuizzes);
+        setAvgQuestionsPerQuiz(stats.avgQuestionsPerQuiz);
         setLineChartData(stats.lineChart);
         setDonutChartData(stats.donutChart);
         setLoadState("ready");
@@ -256,11 +256,11 @@ export default function Home() {
       statData: quizzesGenerated,
     },
     {
-      icon: Download,
-      label: copy.stats.downloadedQuizzes.label,
-      value: downloadedQuizzes.current,
-      description: copy.stats.downloadedQuizzes.description,
-      statData: downloadedQuizzes,
+      icon: ListOrdered,
+      label: copy.stats.avgQuestionsPerQuiz.label,
+      value: avgQuestionsPerQuiz.current,
+      description: copy.stats.avgQuestionsPerQuiz.description,
+      statData: avgQuestionsPerQuiz,
     },
   ];
 
