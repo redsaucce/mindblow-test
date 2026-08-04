@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, select
@@ -75,18 +75,37 @@ async def _avg_questions_per_quiz(db: AsyncSession) -> dict[str, int | None]:
     return {"current": current, "previous": previous}
 
 
-async def _line_chart(db: AsyncSession) -> list[dict]:
-    month_bucket = func.date_trunc("month", Quiz.created_at)
-    result = await db.execute(
-        select(
-            month_bucket.label("month_bucket"),
-            func.count().label("quizzes"),
-        )
-        .group_by(month_bucket)
-        .order_by(month_bucket)
-    )
+async def _line_chart(db: AsyncSession, granularity: str = "month") -> list[dict]:
+    """Buckets Quiz.created_at into a chart series, windowed per granularity:
+      - day:   rolling last 14 days, bucketed by day
+      - week:  rolling last 8 weeks, bucketed by week
+      - month: rolling last 12 months, bucketed by month (default)
+      - year:  all-time, from the earliest quiz to now, bucketed by year
+
+    Rolling windows (day/week/month) keep the chart readable regardless of
+    what day/week/month it currently is, rather than e.g. only showing
+    partial data for "weeks so far this calendar month."
+    """
+    now = datetime.now(timezone.utc)
+
+    trunc_unit, window_start, date_format = {
+        "day": ("day", now - timedelta(days=14), "%b %d"),
+        "week": ("week", now - timedelta(weeks=8), "%b %d"),
+        "month": ("month", now - relativedelta(months=12), "%b %Y"),
+        "year": ("year", None, "%Y"),
+    }.get(granularity, ("month", now - relativedelta(months=12), "%b %Y"))
+
+    bucket = func.date_trunc(trunc_unit, Quiz.created_at)
+    query = select(bucket.label("bucket"), func.count().label("quizzes"))
+
+    if window_start is not None:
+        query = query.where(Quiz.created_at >= window_start)
+
+    query = query.group_by(bucket).order_by(bucket)
+
+    result = await db.execute(query)
     return [
-        {"month": row.month_bucket.strftime("%b %Y"), "quizzes": row.quizzes}
+        {"month": row.bucket.strftime(date_format), "quizzes": row.quizzes}
         for row in result.all()
     ]
 
@@ -101,7 +120,7 @@ async def _donut_chart(db: AsyncSession) -> list[dict]:
     ]
 
 
-async def get_stats(db: AsyncSession) -> dict:
+async def get_stats(db: AsyncSession, granularity: str = "month") -> dict:
     total_users = await _stat_pair(db, User, User.created_at)
     quizzes_generated = await _stat_pair(db, Quiz, Quiz.created_at)
     avg_questions_per_quiz = await _avg_questions_per_quiz(db)
@@ -110,6 +129,6 @@ async def get_stats(db: AsyncSession) -> dict:
         "totalUsers": total_users,
         "quizzesGenerated": quizzes_generated,
         "avgQuestionsPerQuiz": avg_questions_per_quiz,
-        "lineChart": await _line_chart(db),
+        "lineChart": await _line_chart(db, granularity=granularity),
         "donutChart": await _donut_chart(db),
     }

@@ -15,6 +15,8 @@ export interface DonutChartSlice {
   value: number;
 }
 
+export type LineChartGranularity = "day" | "week" | "month" | "year";
+
 interface AdminStatsResponse {
   totalUsers: StatData;
   quizzesGenerated: StatData;
@@ -23,6 +25,10 @@ interface AdminStatsResponse {
   donutChart: DonutChartSlice[];
 }
 
-export async function getStats(): Promise<AdminStatsResponse> {
-  return apiClient.get<AdminStatsResponse>("/admin/stats");
+export async function getStats(
+  granularity: LineChartGranularity = "month"
+): Promise<AdminStatsResponse> {
+  return apiClient.get<AdminStatsResponse>(
+    `/admin/stats?granularity=${encodeURIComponent(granularity)}`
+  );
 }

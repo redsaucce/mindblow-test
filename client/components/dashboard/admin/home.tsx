@@ -28,6 +28,7 @@ import {
   type StatData,
   type LineChartPoint,
   type DonutChartSlice,
+  type LineChartGranularity,
   getStats,
 } from "@/services/dashboard/admin-home-service";
 
@@ -128,14 +129,79 @@ function EmptyChartState() {
   );
 }
 
-function QuizzesLineChart({ data }: { data: LineChartPoint[] }) {
-  const isEmpty = !data || data.length === 0;
+const GRANULARITY_OPTIONS: { value: LineChartGranularity; label: string }[] = [
+  { value: "day", label: "Daily" },
+  { value: "week", label: "Weekly" },
+  { value: "month", label: "Monthly" },
+  { value: "year", label: "Yearly" },
+];
+
+function GranularityToggle({
+  value,
+  onChange,
+}: {
+  value: LineChartGranularity;
+  onChange: (value: LineChartGranularity) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+      {GRANULARITY_OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          aria-pressed={value === option.value}
+          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+            value === option.value
+              ? "bg-white text-emerald-700 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function QuizzesLineChart() {
+  const [granularity, setGranularity] = useState<LineChartGranularity>("month");
+  const [data, setData] = useState<LineChartPoint[]>([]);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadState("loading");
+    getStats(granularity)
+      .then((stats) => {
+        if (cancelled) return;
+        setData(stats.lineChart);
+        setLoadState("ready");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [granularity]);
+
+  const isEmpty = loadState === "ready" && (!data || data.length === 0);
 
   return (
     <div className="border border-slate-200 shadow-sm rounded-2xl bg-white p-6 flex flex-col">
-      <h3 className="text-base font-semibold text-slate-900 mb-4">{copy.lineChart.title}</h3>
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <h3 className="text-base font-semibold text-slate-900">{copy.lineChart.title}</h3>
+        <GranularityToggle value={granularity} onChange={setGranularity} />
+      </div>
 
-      {isEmpty ? (
+      {loadState === "error" ? (
+        <div className="flex flex-col items-center justify-center min-h-[200px]">
+          <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
+          <p className="text-sm text-slate-500 mt-2">Something went wrong</p>
+        </div>
+      ) : isEmpty ? (
         <EmptyChartState />
       ) : (
         <ResponsiveContainer width="100%" height={220}>
@@ -215,7 +281,6 @@ export default function Home() {
   const [totalUsers, setTotalUsers] = useState<StatData>(EMPTY_STAT);
   const [quizzesGenerated, setQuizzesGenerated] = useState<StatData>(EMPTY_STAT);
   const [avgQuestionsPerQuiz, setAvgQuestionsPerQuiz] = useState<StatData>(EMPTY_STAT);
-  const [lineChartData, setLineChartData] = useState<LineChartPoint[]>([]);
   const [donutChartData, setDonutChartData] = useState<DonutChartSlice[]>([]);
 
   useEffect(() => {
@@ -227,7 +292,6 @@ export default function Home() {
         setTotalUsers(stats.totalUsers);
         setQuizzesGenerated(stats.quizzesGenerated);
         setAvgQuestionsPerQuiz(stats.avgQuestionsPerQuiz);
-        setLineChartData(stats.lineChart);
         setDonutChartData(stats.donutChart);
         setLoadState("ready");
       })
@@ -283,7 +347,7 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <QuizzesLineChart data={lineChartData} />
+        <QuizzesLineChart />
         <QuizTypeDonutChart data={donutChartData} />
       </div>
     </div>
