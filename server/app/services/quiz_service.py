@@ -10,7 +10,7 @@ from app.models.activity_log import ActivityType
 from app.models.quiz_data import Quiz, QuizType as ModelQuizType
 from app.models.quiz_question import QuizQuestion
 from app.schemas.quiz import QuizType
-from app.services import ai_service, document_service
+from app.services import ai_service, document_service, retrieval_service
 from app.services.activity_log_service import log_action
 from app.services.prompt_service import get_or_create_default
 
@@ -99,13 +99,26 @@ async def generate_quiz(
     raw_text = await document_service.extract_text(file)
     cleaned_text = document_service.clean_extracted_text(raw_text)
 
+    # Semantic deduplication (see rag-implementation-plan.md): chunk the
+    # cleaned text, embed each chunk, and collapse near-duplicates before
+    # the full text is handed to the main generation prompt. This only
+    # removes genuine repetition (restated/paraphrased content) — nothing
+    # is selected out for "relevance," so the deduplicated text still
+    # covers the whole document, same as today. The chunk list is reused
+    # below for distractor grounding instead of re-chunking.
+    raw_chunks = retrieval_service.chunk_text(cleaned_text)
+    embedded_chunks = await retrieval_service.embed_chunks(raw_chunks)
+    deduplicated_chunks = retrieval_service.deduplicate_chunks(embedded_chunks)
+    deduplicated_text = "\n\n".join(chunk.text for chunk in deduplicated_chunks)
+
     prompt_context = await get_or_create_default(db)
 
     generated = await ai_service.generate_quiz(
-        extracted_text=cleaned_text,
+        extracted_text=deduplicated_text,
         quiz_type=quiz_type,
         question_count=question_count,
         prompt_context=prompt_context,
+        source_chunks=deduplicated_chunks,
     )
 
     title = generated.title.strip()
