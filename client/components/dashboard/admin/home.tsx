@@ -279,9 +279,6 @@ function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
                     {slice.name}
                   </span>
                   <span className="text-sm font-semibold text-slate-900">{pct}%</span>
-                  <span className="text-xs text-slate-400 w-16 text-right">
-                    {slice.value.toLocaleString()} quizzes
-                  </span>
                 </div>
               );
             })}
