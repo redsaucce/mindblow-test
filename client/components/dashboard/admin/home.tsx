@@ -166,25 +166,35 @@ function GranularityToggle({
 function QuizzesLineChart() {
   const [granularity, setGranularity] = useState<LineChartGranularity>("day");
   const [data, setData] = useState<LineChartPoint[]>([]);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [status, setStatus] = useState<"idle" | "ready" | "error">("idle");
+  const [loadedGranularity, setLoadedGranularity] = useState<LineChartGranularity | null>(
+    null
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setLoadState("loading");
     getStats(granularity)
       .then((stats) => {
         if (cancelled) return;
         setData(stats.lineChart);
-        setLoadState("ready");
+        setLoadedGranularity(granularity);
+        setStatus("ready");
       })
       .catch(() => {
         if (cancelled) return;
-        setLoadState("error");
+        setStatus("error");
       });
     return () => {
       cancelled = true;
     };
   }, [granularity]);
+
+  const loadState: LoadState =
+    status === "error"
+      ? "error"
+      : status === "ready" && loadedGranularity === granularity
+        ? "ready"
+        : "loading";
 
   const isEmpty = loadState === "ready" && (!data || data.length === 0);
 
@@ -300,7 +310,6 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoadState("loading");
     getStats()
       .then((stats) => {
         if (cancelled) return;
