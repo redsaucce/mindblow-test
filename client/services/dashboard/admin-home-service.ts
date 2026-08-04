@@ -26,7 +26,7 @@ interface AdminStatsResponse {
 }
 
 export async function getStats(
-  granularity: LineChartGranularity = "month"
+  granularity: LineChartGranularity = "day"
 ): Promise<AdminStatsResponse> {
   return apiClient.get<AdminStatsResponse>(
     `/admin/stats?granularity=${encodeURIComponent(granularity)}`

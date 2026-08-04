@@ -21,7 +21,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from "recharts";
 import { adminHomeContent as copy } from "@/data/dashboard/admin/home";
 import {
@@ -165,7 +164,7 @@ function GranularityToggle({
 }
 
 function QuizzesLineChart() {
-  const [granularity, setGranularity] = useState<LineChartGranularity>("month");
+  const [granularity, setGranularity] = useState<LineChartGranularity>("day");
   const [data, setData] = useState<LineChartPoint[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
 
@@ -235,6 +234,7 @@ function QuizzesLineChart() {
 
 function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
   const isEmpty = !data || data.length === 0;
+  const total = data.reduce((sum, slice) => sum + slice.value, 0);
 
   return (
     <div className="border border-slate-200 shadow-sm rounded-2xl bg-white p-6 flex flex-col">
@@ -243,32 +243,50 @@ function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
       {isEmpty ? (
         <EmptyChartState />
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {data.map((_, index) => (
-                <Cell key={index} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value, name) => [`${value}%`, name]}
-              contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
-            />
-            <Legend
-              iconType="circle"
-              iconSize={8}
-              formatter={(value) => <span className="text-xs text-slate-600">{value}</span>}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {data.map((_, index) => (
+                  <Cell key={index} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value, name) => [`${value} quizzes`, name]}
+                contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="flex flex-col gap-3">
+            {data.map((slice, index) => {
+              const pct = total > 0 ? Math.round((slice.value / total) * 1000) / 10 : 0;
+              return (
+                <div key={slice.name} className="flex items-center gap-3">
+                  <span
+                    className="w-4 h-4 rounded-full shrink-0"
+                    style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }}
+                  />
+                  <span className="text-sm font-medium text-slate-700 flex-1">
+                    {slice.name}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-900">{pct}%</span>
+                  <span className="text-xs text-slate-400 w-16 text-right">
+                    {slice.value.toLocaleString()} quizzes
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

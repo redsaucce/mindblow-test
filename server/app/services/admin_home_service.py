@@ -75,7 +75,7 @@ async def _avg_questions_per_quiz(db: AsyncSession) -> dict[str, int | None]:
     return {"current": current, "previous": previous}
 
 
-async def _line_chart(db: AsyncSession, granularity: str = "month") -> list[dict]:
+async def _line_chart(db: AsyncSession, granularity: str = "day") -> list[dict]:
     """Buckets Quiz.created_at into a chart series, windowed per granularity:
       - day:   rolling last 14 days, bucketed by day
       - week:  rolling last 8 weeks, bucketed by week
@@ -120,7 +120,7 @@ async def _donut_chart(db: AsyncSession) -> list[dict]:
     ]
 
 
-async def get_stats(db: AsyncSession, granularity: str = "month") -> dict:
+async def get_stats(db: AsyncSession, granularity: str = "day") -> dict:
     total_users = await _stat_pair(db, User, User.created_at)
     quizzes_generated = await _stat_pair(db, Quiz, Quiz.created_at)
     avg_questions_per_quiz = await _avg_questions_per_quiz(db)
