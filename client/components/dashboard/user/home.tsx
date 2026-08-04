@@ -14,6 +14,7 @@ import Modal from "@/components/ui/modal";
 import { generatePanelContent as copy } from "@/data/dashboard/user/home";
 import {
   generateQuiz as generateQuizRequest,
+  ApiError,
   type QuizTypeInput,
 } from "@/services/dashboard/user-quiz-generate-service";
 import { getQuizDetail } from "@/services/dashboard/user-quiz-list-service";
@@ -49,6 +50,36 @@ const SERVER_TYPE_TO_LABEL: Record<QuizTypeInput, string> = {
   true_false: "True or False",
   identification: "Identification",
 };
+
+/**
+ * Tier 1 (400/413, file & document validation) — backend `detail` is already
+ * specific and actionable ("file too large", "unreadable PDF", etc.), so it's
+ * shown verbatim and the user is pointed at picking a different file rather
+ * than retrying the same one.
+ * Tier 2 (502, AI generation family) — six distinct backend messages
+ * (wrong question count, malformed question, mismatched type, ...) all
+ * resolve to the same user action: retry. Collapsed into one message.
+ * Tier 3 (429 rate limit, 401 session, network) — each has a distinct
+ * required action, so each gets its own message.
+ */
+function resolveError(err: unknown): { message: string; canRetry: boolean } {
+  if (err instanceof ApiError) {
+    if (err.status === 400 || err.status === 413) {
+      return { message: err.detail, canRetry: false };
+    }
+    if (err.status === 502) {
+      return { message: copy.errorDialog.aiFailureMessage, canRetry: true };
+    }
+    if (err.status === 429) {
+      return { message: err.detail, canRetry: true };
+    }
+    if (err.status === 401) {
+      return { message: copy.errorDialog.sessionExpiredMessage, canRetry: false };
+    }
+    return { message: err.detail, canRetry: true };
+  }
+  return { message: copy.errorDialog.networkErrorMessage, canRetry: true };
+}
 
 async function generateQuiz(
   file: File,
@@ -249,6 +280,8 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(copy.errorDialog.description);
+  const [canRetry, setCanRetry] = useState(true);
 
   const handleFile = useCallback((f: File) => {
     const allowed = [
@@ -309,8 +342,11 @@ export default function Home() {
         setResult(generated);
         setResultModalOpen(true);
       }, 150);
-    } catch {
+    } catch (err) {
       clearInterval(interval);
+      const { message, canRetry: retryable } = resolveError(err);
+      setErrorMessage(message);
+      setCanRetry(retryable);
       setStatus("error");
     }
   };
@@ -508,14 +544,23 @@ export default function Home() {
           {copy.errorDialog.title}
         </h2>
         <p className="text-sm text-slate-500 leading-relaxed mb-5">
-          {copy.errorDialog.description}
+          {errorMessage}
         </p>
         <button
           type="button"
-          onClick={handleTryAgain}
+          onClick={
+            canRetry
+              ? handleTryAgain
+              : () => {
+                  setStatus("idle");
+                  fileInputRef.current?.click();
+                }
+          }
           className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all duration-200"
         >
-          {copy.errorDialog.retryLabel}
+          {canRetry
+            ? copy.errorDialog.retryLabel
+            : copy.errorDialog.chooseDifferentFileLabel}
         </button>
       </Modal>
 

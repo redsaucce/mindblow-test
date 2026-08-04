@@ -30,6 +30,12 @@ export const generatePanelContent = {
     description:
       "Something went wrong while generating your quiz. Please try again.",
     retryLabel: "Try Again",
+    chooseDifferentFileLabel: "Choose a Different File",
+    aiFailureMessage:
+      "The AI had trouble generating your quiz this time. This can happen occasionally — try again.",
+    sessionExpiredMessage: "Your session expired. Please sign in again.",
+    networkErrorMessage:
+      "Couldn't reach the server. Check your connection and try again.",
   },
   resultModal: {
     title: "Quiz Generated!",
