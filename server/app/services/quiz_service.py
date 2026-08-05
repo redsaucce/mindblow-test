@@ -104,8 +104,7 @@ async def generate_quiz(
     # the full text is handed to the main generation prompt. This only
     # removes genuine repetition (restated/paraphrased content) — nothing
     # is selected out for "relevance," so the deduplicated text still
-    # covers the whole document, same as today. The chunk list is reused
-    # below for distractor grounding instead of re-chunking.
+    # covers the whole document, same as today.
     raw_chunks = retrieval_service.chunk_text(cleaned_text)
     embedded_chunks = await retrieval_service.embed_chunks(raw_chunks)
     deduplicated_chunks = retrieval_service.deduplicate_chunks(embedded_chunks)
@@ -118,7 +117,6 @@ async def generate_quiz(
         quiz_type=quiz_type,
         question_count=question_count,
         prompt_context=prompt_context,
-        source_chunks=deduplicated_chunks,
     )
 
     title = generated.title.strip()

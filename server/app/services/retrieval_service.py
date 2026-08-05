@@ -1,10 +1,16 @@
-"""RAG retrieval primitives shared by two pipeline steps (see
-rag-implementation-plan.md):
+"""RAG retrieval primitives (see rag-implementation-plan.md).
 
-1. Semantic deduplication of extracted document text, run once per document
-   before the main generation prompt is assembled (see `deduplicate_chunks`).
-2. Multiple-choice distractor grounding, run once per MCQ question after
-   the initial quiz is generated (see `retrieve_related_chunks`).
+Currently used for one pipeline step: semantic deduplication of extracted
+document text, run once per document before the main generation prompt is
+assembled (see `deduplicate_chunks`).
+
+Multiple-choice distractor grounding (which used to consume
+`retrieve_related_chunks` and `embed_text` here, called once per MCQ
+question) was removed from `ai_service.py` — it made one extra Gemini call
+per question, which exhausted the free-tier rate limit (15 req/min) on
+quizzes with more than a few MC questions. `retrieve_related_chunks` and
+`embed_text` are kept below in case grounding is reintroduced later (e.g.
+batched into a single call), but nothing currently calls them.
 
 Nothing here is persisted — chunks and embeddings live only for the
 duration of a single `generate_quiz()` call, matching how the rest of the
