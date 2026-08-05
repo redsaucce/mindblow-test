@@ -22,27 +22,27 @@ def _month_bounds(reference: datetime) -> tuple[datetime, datetime, datetime, da
     return this_month_start, next_month_start, last_month_start, this_month_start
 
 
-async def _count_in_range(db: AsyncSession, model, start: datetime, end: datetime, date_column) -> int:
-    result = await db.execute(
-        select(func.count())
-        .select_from(model)
-        .where(date_column >= start, date_column < end)
-    )
-    return result.scalar_one()
-
-
 async def _stat_pair(db: AsyncSession, model, date_column) -> dict[str, int | None]:
+    """Cumulative all-time count (current) vs. the cumulative count as of
+    the start of this month (previous) — i.e. "total users right now" vs.
+    "total users at the end of last month," not "users created this month."
+    The stat cards (e.g. "TOTAL USERS") are meant to show running totals,
+    so `current` must include every row ever created, not just this
+    month's."""
     now = datetime.now(timezone.utc)
-    this_start, this_end, last_start, last_end = _month_bounds(now)
-
-    current = await _count_in_range(db, model, this_start, this_end, date_column)
-    previous_count = await _count_in_range(db, model, last_start, last_end, date_column)
+    this_start, _, _, _ = _month_bounds(now)
 
     total_result = await db.execute(select(func.count()).select_from(model))
-    total_ever = total_result.scalar_one()
-    has_history_before_this_month = total_ever > current
+    current = total_result.scalar_one()
 
-    previous = previous_count if has_history_before_this_month else None
+    previous_result = await db.execute(
+        select(func.count()).select_from(model).where(date_column < this_start)
+    )
+    previous_total = previous_result.scalar_one()
+
+    # No rows existed before this month → nothing meaningful to compare
+    # against yet (the frontend also treats previous=0 as "no trend").
+    previous = previous_total if previous_total > 0 else None
     return {"current": current, "previous": previous}
 
 
