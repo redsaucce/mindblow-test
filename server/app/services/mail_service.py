@@ -1,6 +1,7 @@
 import resend
 
 from app.config import settings
+from app.mail.templates import render_announcement_email, render_magic_link_email
 
 resend.api_key = settings.resend_api_key
 
@@ -13,14 +14,13 @@ async def send_magic_link_email(to_email: str, token: str) -> None:
             "from": settings.mail_from,
             "to": [to_email],
             "subject": "Your MindBlow sign-in link",
-            "html": (
-                f"<p>Click the link below to sign in to MindBlow:</p>"
-                f'<p><a href="{link}">{link}</a></p>'
-                f"<p>This link will expire in {settings.magic_link_expire_minutes} minutes. "
-                f"If you didn't request this, you can safely ignore this email.</p>"
+            "html": render_magic_link_email(
+                link=link,
+                expire_minutes=settings.magic_link_expire_minutes,
             ),
         }
     )
+
 
 async def send_announcement_email(to_email: str, subject: str, message: str) -> None:
     resend.Emails.send(
@@ -28,6 +28,6 @@ async def send_announcement_email(to_email: str, subject: str, message: str) -> 
             "from": settings.mail_from,
             "to": [to_email],
             "subject": subject,
-            "html": f"<p>{message}</p>",
+            "html": render_announcement_email(subject=subject, message_html=message),
         }
     )
