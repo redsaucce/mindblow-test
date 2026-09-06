@@ -21,7 +21,7 @@ export const quizListContent = {
     singleTitle: "Download quiz?",
     singleDescription: "This will download the selected quiz as a DOCX file.",
     manyTitleTemplate: "Download {count} quizzes?",
-    manyDescriptionTemplate: "This will download {count} quizzes as DOCX files.",
+    manyDescriptionTemplate: "This will download {count} quizzes as DOCX files in a single ZIP archive.",
     cancelLabel: "Cancel",
     confirmLabel: "Download",
     downloadingLabel: "Downloading...",
