@@ -7,35 +7,6 @@ and JS. See inline comments for client-specific fallbacks (Outlook VML,
 font fallback stack, etc).
 """
 
-_BRAIN_ICON_SVG = """
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
-  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
-  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
-  <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
-  <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
-  <path d="M6 18a4 4 0 0 1-1.967-.516"/>
-  <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
-</svg>
-""".strip()
-
-_KEY_ICON_SVG = """
-<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/>
-  <path d="m21 2-9.6 9.6"/>
-  <circle cx="7.5" cy="15.5" r="5.5"/>
-</svg>
-""".strip()
-
-_MEGAPHONE_ICON_SVG = """
-<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="m3 11 18-5v12L3 14v-3z"/>
-  <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
-</svg>
-""".strip()
-
 
 def _base_layout(*, preheader: str, body_html: str) -> str:
     """Wraps content in the shared MindBlow header/footer shell."""
@@ -69,23 +40,6 @@ def _base_layout(*, preheader: str, body_html: str) -> str:
             <td style="background-color:#059669; padding:24px 32px;">
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding-right:10px; vertical-align:middle;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" style="background-color:#059669; background-image:linear-gradient(135deg, #059669, #15803d); border-radius:8px; width:32px; height:32px; box-shadow:0 4px 10px rgba(4,120,87,0.45), 0 1px 3px rgba(0,0,0,0.25);">
-                      <tr>
-                        <td align="center" valign="middle" style="width:32px; height:32px;">
-                          <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" style="width:32px;height:32px;" arcsize="25%" fillcolor="#059669" stroke="f">
-                          <v:textbox inset="0,0,0,0">
-                          <![endif]-->
-                          {_BRAIN_ICON_SVG}
-                          <!--[if mso]>
-                          </v:textbox>
-                          </v:roundrect>
-                          <![endif]-->
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
                   <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:20px; font-weight:700; color:#ffffff; letter-spacing:-0.02em; vertical-align:middle;">
                     MindBlow
                   </td>
@@ -137,18 +91,7 @@ def render_magic_link_email(*, link: str, expire_minutes: int) -> str:
     body = f"""
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td style="text-align:center; padding-bottom:8px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px auto; background-color:#ecfdf5; border-radius:14px; width:56px; height:56px;">
-            <tr>
-              <td align="center" valign="middle" style="width:56px; height:56px;">
-                {_KEY_ICON_SVG}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:22px; font-weight:700; color:#111827; text-align:center; padding-bottom:10px;">
+        <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:22px; font-weight:700; color:#111827; text-align:center; padding-top:8px; padding-bottom:10px;">
           Sign in to MindBlow
         </td>
       </tr>
@@ -209,18 +152,7 @@ def render_announcement_email(*, subject: str, message_html: str) -> str:
     body = f"""
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td style="text-align:center; padding-bottom:8px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px auto; background-color:#ecfdf5; border-radius:14px; width:56px; height:56px;">
-            <tr>
-              <td align="center" valign="middle" style="width:56px; height:56px;">
-                {_MEGAPHONE_ICON_SVG}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:22px; font-weight:700; color:#111827; text-align:center; padding-bottom:16px;">
+        <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:22px; font-weight:700; color:#111827; text-align:center; padding-top:8px; padding-bottom:16px;">
           {subject}
         </td>
       </tr>
