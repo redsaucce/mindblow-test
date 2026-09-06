@@ -1,7 +1,7 @@
 import resend
 
 from app.config import settings
-from app.mail.templates import render_announcement_email, render_magic_link_email
+from app.templates import render_announcement_email, render_magic_link_email
 
 resend.api_key = settings.resend_api_key
 
