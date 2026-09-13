@@ -196,7 +196,7 @@ function QuizzesLineChart() {
         ? "ready"
         : "loading";
 
-  const isEmpty = loadState === "ready" && (!data || data.length === 0);
+  const isEmpty = !data || data.length === 0;
 
   return (
     <div className="border border-slate-200 shadow-sm rounded-2xl bg-white p-6 flex flex-col">
