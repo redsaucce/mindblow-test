@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronUp, LogOut, X } from "lucide-react";
+import { ChevronsUpDown, LogOut, X } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
 import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
 import { useToggle } from "@/hooks/use-toggle";
@@ -83,7 +83,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <Link
             href="/"
             onClick={onClose}
-            className="font-heading font-extrabold text-xl text-green-700 tracking-tight hover:opacity-80 transition-opacity duration-200"
+            className="font-heading font-extrabold text-xl text-emerald-600 tracking-tight hover:opacity-80 transition-opacity duration-200"
           >
             {sidebarAccount.brand}
           </Link>
@@ -109,8 +109,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     onClick={onClose}
                     className={`flex items-center gap-3 w-full text-sm sm:text-base lg:text-sm rounded-xl lg:rounded-md px-4 py-3 transition-colors duration-200 ${
                       active
-                        ? "bg-emerald-50 text-green-700 font-medium lg:border-l-2 lg:border-green-700"
-                        : "text-slate-700 lg:text-slate-600 hover:bg-slate-50 hover:text-green-700"
+                        ? "bg-emerald-50 text-emerald-600 font-medium lg:border-l-2 lg:border-emerald-600"
+                        : "text-slate-700 lg:text-slate-600 hover:bg-slate-50 hover:text-emerald-600"
                     }`}
                   >
                     {link.label}
@@ -140,11 +140,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </span>
                 )}
               </div>
-              <ChevronUp
-                className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                  accountOpen ? "rotate-0" : "rotate-180"
-                }`}
-              />
+              <ChevronsUpDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
 
             {accountOpen && (
