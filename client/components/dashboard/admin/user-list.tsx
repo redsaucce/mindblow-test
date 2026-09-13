@@ -1,60 +1,59 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import DataTable from "@/components/ui/data-table";
 import AlertModal from "@/components/ui/alert-modal";
 import { emptyStates } from "@/data/ui/empty-states";
 import { userListContent as copy } from "@/data/dashboard/admin/user-list";
 import type { ColumnDef } from "@tanstack/react-table";
-import { type AdminUser, listUsers, deleteUser as deleteUserRequest } from "@/services/dashboard/admin-users-service";
-
-type LoadState = "loading" | "ready" | "error";
+import {
+  type AdminUser,
+  listUsers,
+  deleteUser as deleteUserRequest,
+} from "@/services/dashboard/admin-users-service";
 
 export default function UserList() {
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [data, setData] = useState<AdminUser[]>([]);
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoadState("loading");
-    listUsers()
-      .then((result) => {
-        if (cancelled) return;
-        setData(result);
-        setLoadState("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setLoadState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: listUsers,
+  });
+
+  const users = data ?? [];
 
   const showFeedback = (message: string) => {
     setFeedback(message);
     setTimeout(() => setFeedback(""), 3000);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await deleteUserRequest(deleteTarget);
-      setData((prev) => prev.filter((u) => u.id !== deleteTarget));
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteUserRequest(id),
+    onSuccess: () => {
+      // Re-fetches the users list so the table reflects the deletion —
+      // more reliable than manually filtering the cached array, and
+      // keeps generatedQuizzes/other derived fields in sync too.
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setDeleteTarget(null);
       showFeedback(copy.feedback.deleted);
-    } catch {
+    },
+    onError: () => {
       setDeleteTarget(null);
       showFeedback(copy.feedback.error);
-    } finally {
-      setIsDeleting(false);
-    }
+    },
+  });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteMutation.mutate(deleteTarget);
   };
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
@@ -120,15 +119,15 @@ export default function UserList() {
   return (
     <>
       <DataTable
-        data={data}
+        data={users}
         columns={columns}
         columnWidths={[340, 120, 180, 180, 100]}
-        isLoading={loadState === "loading"}
+        isLoading={isLoading}
         emptyIcon={Users}
         emptyTitle={
-          loadState === "error"
+          isError
             ? "Something went wrong"
-            : loadState === "loading"
+            : isLoading
               ? "Loading users..."
               : emptyStates.userList.title
         }
@@ -140,14 +139,14 @@ export default function UserList() {
       <AlertModal
         open={!!deleteTarget}
         onClose={() => {
-          if (!isDeleting) setDeleteTarget(null);
+          if (!deleteMutation.isPending) setDeleteTarget(null);
         }}
         title={copy.deleteDialog.title}
         description={copy.deleteDialog.description}
         cancelLabel={copy.deleteDialog.cancelLabel}
         confirmLabel={copy.deleteDialog.confirmLabel}
         loadingLabel={copy.deleteDialog.deletingLabel}
-        isLoading={isDeleting}
+        isLoading={deleteMutation.isPending}
         onConfirm={handleConfirmDelete}
         confirmVariant="danger"
       />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   User,
   FileText,
@@ -25,7 +26,6 @@ import {
 import { adminHomeContent as copy } from "@/data/dashboard/admin/home";
 import {
   type StatData,
-  type LineChartPoint,
   type DonutChartSlice,
   type LineChartGranularity,
   getStats,
@@ -165,37 +165,22 @@ function GranularityToggle({
 
 function QuizzesLineChart() {
   const [granularity, setGranularity] = useState<LineChartGranularity>("day");
-  const [data, setData] = useState<LineChartPoint[]>([]);
-  const [status, setStatus] = useState<"idle" | "ready" | "error">("idle");
-  const [loadedGranularity, setLoadedGranularity] = useState<LineChartGranularity | null>(
-    null
-  );
 
-  useEffect(() => {
-    let cancelled = false;
-    getStats(granularity)
-      .then((stats) => {
-        if (cancelled) return;
-        setData(stats.lineChart);
-        setLoadedGranularity(granularity);
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [granularity]);
+  // Shares the ["admin-stats", granularity] cache key with the Home
+  // component's own query below — when both resolve to the same
+  // granularity ("day" by default), React Query dedupes them into a
+  // single network request instead of firing twice on first load.
+  const {
+    data: stats,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["admin-stats", granularity],
+    queryFn: () => getStats(granularity),
+  });
 
-  const loadState: LoadState =
-    status === "error"
-      ? "error"
-      : status === "ready" && loadedGranularity === granularity
-        ? "ready"
-        : "loading";
-
+  const data = stats?.lineChart ?? [];
+  const loadState: LoadState = isError ? "error" : isLoading ? "loading" : "ready";
   const isEmpty = !data || data.length === 0;
 
   return (
@@ -304,31 +289,17 @@ function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
 const EMPTY_STAT: StatData = { current: 0, previous: null };
 
 export default function Home() {
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [totalUsers, setTotalUsers] = useState<StatData>(EMPTY_STAT);
-  const [quizzesGenerated, setQuizzesGenerated] = useState<StatData>(EMPTY_STAT);
-  const [avgQuestionsPerQuiz, setAvgQuestionsPerQuiz] = useState<StatData>(EMPTY_STAT);
-  const [donutChartData, setDonutChartData] = useState<DonutChartSlice[]>([]);
+  // Same ["admin-stats", "day"] key as QuizzesLineChart's default —
+  // deduped by React Query into one request on first render.
+  const { data: stats, isError } = useQuery({
+    queryKey: ["admin-stats", "day"],
+    queryFn: () => getStats("day"),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    getStats()
-      .then((stats) => {
-        if (cancelled) return;
-        setTotalUsers(stats.totalUsers);
-        setQuizzesGenerated(stats.quizzesGenerated);
-        setAvgQuestionsPerQuiz(stats.avgQuestionsPerQuiz);
-        setDonutChartData(stats.donutChart);
-        setLoadState("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setLoadState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const totalUsers = stats?.totalUsers ?? EMPTY_STAT;
+  const quizzesGenerated = stats?.quizzesGenerated ?? EMPTY_STAT;
+  const avgQuestionsPerQuiz = stats?.avgQuestionsPerQuiz ?? EMPTY_STAT;
+  const donutChartData = stats?.donutChart ?? [];
 
   const cards = [
     {
@@ -354,7 +325,7 @@ export default function Home() {
     },
   ];
 
-  if (loadState === "error") {
+  if (isError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
         <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />

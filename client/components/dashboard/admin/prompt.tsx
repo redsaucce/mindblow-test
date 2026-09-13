@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { promptPageContent as copy } from "@/data/dashboard/admin/prompt";
 import { type PromptFields, getPrompt, updatePrompt } from "@/services/dashboard/admin-prompt-service";
 
@@ -17,24 +18,20 @@ const FIELD_ORDER: FieldKey[] = ["prefix", "objectives", "constraints", "suffix"
 
 export default function PromptPage() {
   const [values, setValues] = useState<PromptFields>(EMPTY_PROMPT);
-  const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [activeField, setActiveField] = useState<FieldKey>("prefix");
 
+  // On error this silently keeps EMPTY_PROMPT via the sync effect below —
+  // same fallback behavior as the original, fields just show placeholder
+  // text either way rather than surfacing a load error.
+  const { data } = useQuery({
+    queryKey: ["admin-prompt"],
+    queryFn: getPrompt,
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    getPrompt()
-      .then((fields) => {
-        if (cancelled) return;
-        setValues(fields);
-      })
-      .catch(() => {
-        // Silently keep EMPTY_PROMPT — fields still show placeholder text either way.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (data) setValues(data);
+  }, [data]);
 
   const updateField = (field: FieldKey, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -45,17 +42,15 @@ export default function PromptPage() {
     setTimeout(() => setFeedback(""), 3000);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const saveMutation = useMutation({
+    mutationFn: (fields: PromptFields) => updatePrompt(fields),
+    onSuccess: () => showFeedback(copy.savedMessage),
+    onError: () => showFeedback(copy.errorMessage),
+  });
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    try {
-      await updatePrompt(values);
-      showFeedback(copy.savedMessage);
-    } catch {
-      showFeedback(copy.errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
+    saveMutation.mutate(values);
   };
 
   const activeMeta = copy.fields[activeField];
@@ -109,10 +104,10 @@ export default function PromptPage() {
             <div className="flex items-center gap-4">
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={saveMutation.isPending}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
               >
-                {isSaving ? copy.savingLabel : copy.saveLabel}
+                {saveMutation.isPending ? copy.savingLabel : copy.saveLabel}
               </button>
               {feedback && <p className="text-sm text-slate-500">{feedback}</p>}
             </div>

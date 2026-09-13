@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ScrollText, ListFilter, ChevronDown } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import DataTable from "@/components/ui/data-table";
@@ -9,8 +10,6 @@ import { activityLogsContent as copy, activityTabs } from "@/data/dashboard/admi
 import { useToggle } from "@/hooks/use-toggle";
 import { useSetTopbarActions } from "@/hooks/use-topbar-actions";
 import { type ActivityLogEntry, listLogs } from "@/services/dashboard/admin-logs-service";
-
-type LoadState = "loading" | "ready" | "error";
 
 function toRelativeTime(isoDatetime: string): string {
   const then = new Date(isoDatetime).getTime();
@@ -32,31 +31,24 @@ function toRelativeTime(isoDatetime: string): string {
 
 export default function ActivityLog() {
   const [activeTab, setActiveTab] = useState("all");
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
   const {
     value: filterOpen,
     toggle: toggleFilter,
     close: closeFilter,
   } = useToggle(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoadState("loading");
-    listLogs(activeTab)
-      .then((result) => {
-        if (cancelled) return;
-        setLogs(result);
-        setLoadState("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setLoadState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab]);
+  // Cached per tab — switching tabs and switching back reuses the cached
+  // result instead of refetching, same as every other list here.
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["admin-logs", activeTab],
+    queryFn: () => listLogs(activeTab),
+  });
+
+  const logs = data ?? [];
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -136,12 +128,12 @@ export default function ActivityLog() {
       data={logs}
       columns={columns}
       columnWidths={[300, 600]}
-      isLoading={loadState === "loading"}
+      isLoading={isLoading}
       emptyIcon={ScrollText}
       emptyTitle={
-        loadState === "error"
+        isError
           ? "Something went wrong"
-          : loadState === "loading"
+          : isLoading
             ? "Loading activity..."
             : emptyStates.activityLogs.title
       }
