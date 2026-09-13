@@ -438,7 +438,7 @@ export default function Home() {
                 {copy.quizType.options.map(({ value, label }) => (
                   <label
                     key={value}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm cursor-pointer transition-all duration-200 w-full sm:w-auto ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer transition-all duration-200 w-full sm:w-auto ${
                       quizType === value
                         ? "border-green-700 text-green-700 bg-emerald-50"
                         : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -498,7 +498,7 @@ export default function Home() {
                   setQuantity(clamped);
                   setQuantityInput(String(clamped));
                 }}
-                className="w-full sm:w-40 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
+                className="w-full sm:w-40 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/50 focus:border-emerald-400 transition-all"
               />
             </div>
           </div>
