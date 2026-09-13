@@ -5,8 +5,8 @@ export const footer = {
   },
   legalLinks: ["Privacy Policy", "Terms of Service", "Disclaimer"],
   contactInfo: [
-    { text: "hello@mindblow.com", href: "mailto:hello@mindblow.com" },
-    { text: "+63 912 345 6789", href: "tel:+639123456789" },
+    { text: "mindblow@mindblow.online", href: "mailto:mindblow@mindblow.online" },
+    { text: "+63 938 193 7191", href: "tel:+639381937191" },
     { text: "Bayombong, Nueva Vizcaya, PH", href: "#" },
   ],
   copyrightSuffix: "All rights reserved.",
