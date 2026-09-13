@@ -13,7 +13,7 @@ async def send_magic_link_email(to_email: str, token: str) -> None:
         {
             "from": settings.mail_from,
             "to": [to_email],
-            "subject": "Your MindBlow sign-in link",
+            "subject": "MindBlow sign-in link",
             "html": render_magic_link_email(
                 link=link,
                 expire_minutes=settings.magic_link_expire_minutes,

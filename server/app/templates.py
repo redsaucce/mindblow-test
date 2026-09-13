@@ -67,7 +67,7 @@ def _base_layout(*, preheader: str, body_html: str) -> str:
             <td style="padding:20px 32px 28px 32px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="font-size:12px; line-height:1.6; color:#9ca3af; text-align:center;">
+                  <td style="font-size:12px; line-height:1.6; color:#9ca3af;">
                     If you didn't request this, you can safely ignore this email.<br />
                     &copy; 2026 MindBlow &mdash; AI-powered quiz generation.
                   </td>
@@ -127,16 +127,6 @@ def render_magic_link_email(*, link: str, expire_minutes: int) -> str:
           <span style="display:inline-block; background-color:#ecfdf5; color:#047857; font-size:12px; font-weight:600; padding:5px 14px; border-radius:999px;">
             &#9201; Expires in {expire_minutes}:00
           </span>
-        </td>
-      </tr>
-      <tr>
-        <td style="font-size:13px; line-height:1.5; color:#9ca3af; text-align:center; padding-bottom:4px;">
-          Or copy and paste this link into your browser:
-        </td>
-      </tr>
-      <tr>
-        <td style="font-size:12px; line-height:1.5; color:#047857; text-align:center; word-break:break-all; padding-bottom:8px;">
-          {link}
         </td>
       </tr>
     </table>
