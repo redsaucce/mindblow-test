@@ -79,7 +79,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between px-6 py-5 lg:px-4 lg:py-6 border-b border-slate-100 lg:border-b-0">
+        <div className="flex items-center justify-between px-6 py-4 lg:px-4 lg:py-5 border-b border-slate-100 lg:border-b-0">
           <Link
             href="/"
             onClick={onClose}
