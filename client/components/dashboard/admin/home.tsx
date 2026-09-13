@@ -272,6 +272,8 @@ function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
               <Tooltip
                 formatter={(value, name) => [`${value} quizzes`, name]}
                 contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+                itemStyle={{ color: "#0f172a" }}
+                labelStyle={{ color: "#0f172a" }}
               />
             </PieChart>
           </ResponsiveContainer>
