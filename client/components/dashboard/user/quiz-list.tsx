@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileX, Download, Loader2, ScrollText } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import AlertModal from "@/components/ui/alert-modal";
@@ -12,7 +13,6 @@ import { quizListContent as copy } from "@/data/dashboard/user/quiz-list";
 import { emptyStates } from "@/data/ui/empty-states";
 import {
   type Quiz,
-  type QuizDetail,
   listQuizzes,
   deleteQuiz as deleteQuizRequest,
   getQuizDetail,
@@ -21,8 +21,6 @@ import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/
 
 type DeleteTarget = { type: "single"; id: string } | { type: "bulk" } | null;
 type DownloadTarget = { ids: string[] } | null;
-type LoadState = "loading" | "ready" | "error";
-type PreviewLoadState = "loading" | "ready" | "error";
 
 async function deleteQuizzes(ids: string[]) {
   await Promise.all(ids.map((id) => deleteQuizRequest(id)));
@@ -45,40 +43,48 @@ function interpolate(template: string, count: number) {
 
 export default function QuizList() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previewScrollContainerRef = useRef<HTMLDivElement>(null);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
+
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["user-quizzes"],
+    queryFn: listQuizzes,
+  });
+
+  const quizzes = data ?? [];
+  const loadState: "loading" | "ready" | "error" = isError
+    ? "error"
+    : isLoading
+      ? "loading"
+      : "ready";
+
   const { containerRef: autoHeightRef, maxHeight } = useAutoScrollHeight({
     recomputeKey: loadState,
   });
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [downloadTarget, setDownloadTarget] = useState<DownloadTarget>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
-  const [previewDetail, setPreviewDetail] = useState<QuizDetail | null>(null);
-  const [previewLoadState, setPreviewLoadState] = useState<PreviewLoadState>("loading");
   const [feedback, setFeedback] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoadState("loading");
-    listQuizzes()
-      .then((data) => {
-        if (cancelled) return;
-        setQuizzes(data);
-        setLoadState("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setLoadState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Cached per quiz id — re-opening the same quiz's preview within the
+  // cache window shows instantly instead of refetching its questions.
+  const {
+    data: previewDetail,
+    isLoading: previewLoading,
+    isError: previewError,
+  } = useQuery({
+    queryKey: ["quiz-detail", previewQuiz?.id],
+    queryFn: () => getQuizDetail(previewQuiz!.id),
+    enabled: !!previewQuiz,
+  });
 
   const allChecked = quizzes.length > 0 && selected.size === quizzes.length;
   const someChecked = selected.size > 0 && selected.size < quizzes.length;
@@ -95,22 +101,12 @@ export default function QuizList() {
     });
   };
 
-  const openPreview = async (quiz: Quiz) => {
+  const openPreview = (quiz: Quiz) => {
     setPreviewQuiz(quiz);
-    setPreviewDetail(null);
-    setPreviewLoadState("loading");
-    try {
-      const detail = await getQuizDetail(quiz.id);
-      setPreviewDetail(detail);
-      setPreviewLoadState("ready");
-    } catch {
-      setPreviewLoadState("error");
-    }
   };
 
   const closePreview = () => {
     setPreviewQuiz(null);
-    setPreviewDetail(null);
   };
 
   const handleDeleteClick = () => {
@@ -157,13 +153,12 @@ export default function QuizList() {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    const ids = deleteTarget.type === "single" ? [deleteTarget.id] : Array.from(selected);
-    setIsDeleting(true);
-    try {
-      await deleteQuizzes(ids);
-      setQuizzes((prev) => prev.filter((q) => !ids.includes(q.id)));
+  const deleteMutation = useMutation({
+    mutationFn: (ids: string[]) => deleteQuizzes(ids),
+    onSuccess: (_data, ids) => {
+      // Re-fetches the quiz list rather than patching it locally, so
+      // counts/pagination stay correct after a delete.
+      queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
       setSelected((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
@@ -175,12 +170,17 @@ export default function QuizList() {
           ? copy.feedback.quizDeletedSingle
           : interpolate(copy.feedback.quizDeletedManyTemplate, ids.length)
       );
-    } catch {
+    },
+    onError: () => {
       setDeleteTarget(null);
       showFeedback(copy.feedback.deleteError);
-    } finally {
-      setIsDeleting(false);
-    }
+    },
+  });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const ids = deleteTarget.type === "single" ? [deleteTarget.id] : Array.from(selected);
+    deleteMutation.mutate(ids);
   };
 
   const dialogTitle = () => {
@@ -325,14 +325,14 @@ export default function QuizList() {
       <AlertModal
         open={!!deleteTarget}
         onClose={() => {
-          if (!isDeleting) setDeleteTarget(null);
+          if (!deleteMutation.isPending) setDeleteTarget(null);
         }}
         title={dialogTitle()}
         description={dialogDescription()}
         cancelLabel={copy.deleteDialog.cancelLabel}
         confirmLabel={copy.deleteDialog.confirmLabel}
         loadingLabel={copy.deleteDialog.deletingLabel}
-        isLoading={isDeleting}
+        isLoading={deleteMutation.isPending}
         onConfirm={handleConfirmDelete}
         confirmVariant="danger"
       />
@@ -418,14 +418,14 @@ export default function QuizList() {
       >
         {previewQuiz && (
           <div className="pt-5">
-            {previewLoadState === "loading" && (
+            {previewLoading && (
               <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <p className="text-sm">Loading questions...</p>
               </div>
             )}
 
-            {previewLoadState === "error" && (
+            {previewError && (
               <div className="py-16 flex flex-col items-center justify-center">
                 <EmptyState
                   icon={FileX}
@@ -435,7 +435,7 @@ export default function QuizList() {
               </div>
             )}
 
-            {previewLoadState === "ready" && previewDetail && (
+            {!previewLoading && !previewError && previewDetail && (
               <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-4">
                   {previewDetail.questions.map((q) => (
