@@ -23,13 +23,35 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { adminHomeContent as copy } from "@/data/dashboard/admin/home";
 import {
   type StatData,
   type DonutChartSlice,
   type LineChartGranularity,
   getStats,
 } from "@/services/dashboard/admin-home-service";
+
+const copy = {
+  stats: {
+    totalUsers: { label: "TOTAL USERS", description: "Active accounts" },
+    quizzesGenerated: { label: "QUIZZES GENERATED", description: "All time" },
+    avgQuestionsPerQuiz: { label: "AVG. QUESTIONS", description: "Per quiz" },
+  },
+  trend: {
+    noPreviousData: "No previous data",
+    vsLastMonth: "vs last month",
+  },
+  emptyState: {
+    noData: "No data available",
+    hint: "Data will appear here once records are available.",
+  },
+  lineChart: {
+    title: "Quizzes Generated Over Time",
+    seriesLabel: "Quizzes",
+  },
+  donutChart: {
+    title: "Quiz Type Distribution",
+  },
+};
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -111,7 +133,7 @@ function StatCard({
           {value === 0 ? copy.emptyState.noData : description}
         </p>
       </div>
-      <div className="flex items-center gap-1 mt-auto pt-3 border-t border-slate-100 min-h-[20px]">
+      <div className="flex items-center gap-1 mt-auto pt-3 border-t border-slate-100 min-h-5">
         <TrendIndicator current={statData.current} previous={statData.previous} />
       </div>
     </div>
@@ -120,7 +142,7 @@ function StatCard({
 
 function EmptyChartState() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[200px]">
+    <div className="flex flex-col items-center justify-center min-h-50">
       <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
       <p className="text-sm text-slate-500 mt-2">{copy.emptyState.noData}</p>
       <p className="text-xs text-slate-400">{copy.emptyState.hint}</p>
@@ -191,7 +213,7 @@ function QuizzesLineChart() {
       </div>
 
       {loadState === "error" ? (
-        <div className="flex flex-col items-center justify-center min-h-[200px]">
+        <div className="flex flex-col items-center justify-center min-h-50">
           <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
           <p className="text-sm text-slate-500 mt-2">Something went wrong</p>
         </div>
@@ -327,7 +349,7 @@ export default function Home() {
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
+      <div className="flex flex-col items-center justify-center min-h-75 gap-2">
         <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
         <p className="text-sm text-slate-500">Something went wrong</p>
         <p className="text-xs text-slate-400">We couldn't load the overview. Please try again.</p>

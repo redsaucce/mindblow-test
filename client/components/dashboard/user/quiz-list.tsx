@@ -9,7 +9,6 @@ import AlertModal from "@/components/ui/alert-modal";
 import ScrollBar from "@/components/ui/scroll-bar";
 import EmptyState from "@/components/ui/empty-state";
 import { useAutoScrollHeight } from "@/hooks/use-auto-scroll-height";
-import { quizListContent as copy } from "@/data/dashboard/user/quiz-list";
 import { emptyStates } from "@/data/ui/empty-states";
 import {
   type Quiz,
@@ -18,6 +17,47 @@ import {
   getQuizDetail,
 } from "@/services/dashboard/user-quiz-list-service";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
+
+const copy = {
+  selectAllLabel: "Select all",
+  downloadLabel: "Download",
+  deleteLabel: "Delete",
+  deleteAllLabel: "Delete",
+  deleteDialog: {
+    singleTitle: "Delete quiz?",
+    singleDescription:
+      "This will permanently delete this quiz. This action cannot be undone.",
+    allTitle: "Delete all quizzes?",
+    allDescriptionTemplate:
+      "This will permanently delete all {count} quizzes in your history. This action cannot be undone.",
+    someTitleTemplate: "Delete {count} quizzes?",
+    someDescription:
+      "This will permanently delete the selected quizzes. This action cannot be undone.",
+    cancelLabel: "Cancel",
+    confirmLabel: "Delete",
+    deletingLabel: "Deleting...",
+  },
+  downloadDialog: {
+    singleTitle: "Download quiz?",
+    singleDescription: "This will download the selected quiz as a DOCX file.",
+    manyTitleTemplate: "Download {count} quizzes?",
+    manyDescriptionTemplate: "This will download {count} quizzes as DOCX files in a single ZIP archive.",
+    cancelLabel: "Cancel",
+    confirmLabel: "Download",
+    downloadingLabel: "Downloading...",
+  },
+  feedback: {
+    quizDeletedSingle: "Quiz deleted",
+    quizDeletedManyTemplate: "{count} quizzes deleted",
+    deleteError: "Something went wrong. Please try again.",
+    downloadStartedSingle: "Download started",
+    downloadStartedManyTemplate: "{count} quizzes downloading",
+    downloadError: "Download failed. Please try again.",
+  },
+  previewModal: {
+    downloadLabel: "Download Quiz",
+  },
+};
 
 type DeleteTarget = { type: "single"; id: string } | { type: "bulk" } | null;
 type DownloadTarget = { ids: string[] } | null;
@@ -406,7 +446,7 @@ export default function QuizList() {
                     closePreview();
                     setDownloadTarget({ ids: [quiz.id] });
                   }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
                 >
                   <Download className="w-3.5 h-3.5" />
                   {copy.previewModal.downloadLabel}

@@ -11,7 +11,6 @@ import {
   Loader2,
 } from "lucide-react";
 import Modal from "@/components/ui/modal";
-import { generatePanelContent as copy } from "@/data/dashboard/user/home";
 import {
   generateQuiz as generateQuizRequest,
   ApiError,
@@ -19,6 +18,58 @@ import {
 } from "@/services/dashboard/user-quiz-generate-service";
 import { getQuizDetail } from "@/services/dashboard/user-quiz-list-service";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
+
+const copy = {
+  upload: {
+    label: "Upload your PDF or DOCX, up to 10MB",
+    maxSizeBytes: 10 * 1024 * 1024,
+    invalidTypeMessage: "Only PDF or DOCX files are supported.",
+    tooLargeMessage: "File is too large — max size is 10MB.",
+    changeLabel: "Change",
+  },
+  quizType: {
+    label: "Quiz Type",
+    options: [
+      { value: "mcq", label: "Multiple Choice" },
+      { value: "tf", label: "True or False" },
+      { value: "identification", label: "Identification" },
+    ],
+  },
+  quantity: {
+    label: "Number of Questions",
+    hint: "min 25 · max 50",
+    min: 25,
+    max: 50,
+  },
+  generateLabel: "Generate Quiz",
+  generatingDialog: {
+    title: "Generating your quiz",
+    progressLabel: "Generating...",
+  },
+  errorDialog: {
+    title: "Quiz generation failed",
+    description:
+      "Something went wrong while generating your quiz. Please try again.",
+    retryLabel: "Try Again",
+    chooseDifferentFileLabel: "Choose a Different File",
+    aiFailureMessage:
+      "The AI had trouble generating your quiz this time. This can happen occasionally — try again.",
+    sessionExpiredMessage: "Your session expired. Please sign in again.",
+    networkErrorMessage:
+      "Couldn't reach the server. Check your connection and try again.",
+  },
+  resultModal: {
+    title: "Quiz Generated!",
+    answerKeyLabel: "Answer Key",
+    downloadPrompt: "Download for the full quiz and answer key",
+    generateAnotherLabel: "Generate Another",
+    viewQuizzesLabel: "View My Quizzes",
+    downloadLabel: "Download Quiz",
+    downloadingLabel: "Preparing download...",
+    downloadSuccessMessage: "Download started",
+    downloadErrorMessage: "Download failed. Please try again.",
+  },
+};
 
 type GenerateStatus = "idle" | "generating" | "success" | "error";
 
@@ -200,7 +251,7 @@ function QuizResultModal({
               type="button"
               onClick={handleDownload}
               disabled={isDownloading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
             >
               {isDownloading ? (
                 <>
@@ -507,7 +558,7 @@ export default function Home() {
             type="button"
             onClick={handleGenerate}
             disabled={!file}
-            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-50 disabled:hover:from-emerald-600 disabled:hover:to-green-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
+            className="w-full inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-50 disabled:hover:from-emerald-600 disabled:hover:to-green-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
           >
             {copy.generateLabel}
             <Wand2 className="w-4 h-4" />
@@ -526,7 +577,7 @@ export default function Home() {
         </h2>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-600 transition-all duration-150"
+            className="h-full rounded-full bg-linear-to-r from-emerald-500 to-green-600 transition-all duration-150"
             style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
@@ -556,7 +607,7 @@ export default function Home() {
                   fileInputRef.current?.click();
                 }
           }
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all duration-200"
+          className="inline-flex items-center gap-2 bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all duration-200"
         >
           {canRetry
             ? copy.errorDialog.retryLabel

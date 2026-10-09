@@ -6,10 +6,26 @@ import { ScrollText, ListFilter, ChevronDown } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import DataTable from "@/components/ui/data-table";
 import { emptyStates } from "@/data/ui/empty-states";
-import { activityLogsContent as copy, activityTabs } from "@/data/dashboard/admin/activity-logs";
 import { useToggle } from "@/hooks/use-toggle";
 import { useSetTopbarActions } from "@/hooks/use-topbar-actions";
 import { type ActivityLogEntry, listLogs } from "@/services/dashboard/admin-logs-service";
+
+const activityTabs = [
+  { label: "All", value: "all" },
+  { label: "Registered", value: "registered" },
+  { label: "Generated", value: "generated" },
+  { label: "Downloaded", value: "downloaded" },
+  { label: "Quiz Deleted", value: "quiz_deleted" },
+  { label: "User Deleted", value: "user_deleted" },
+];
+
+const copy = {
+  columns: {
+    email: "USER EMAIL",
+    activity: "ACTIVITY",
+  },
+  summaryTemplate: "Showing {shown} of {total} entries",
+};
 
 function toRelativeTime(isoDatetime: string): string {
   const then = new Date(isoDatetime).getTime();

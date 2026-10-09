@@ -2,8 +2,38 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { promptPageContent as copy } from "@/data/dashboard/admin/prompt";
 import { type PromptFields, getPrompt, updatePrompt } from "@/services/dashboard/admin-prompt-service";
+
+const copy = {
+  title: "Quiz Generation Prompt",
+  subtitle: "Edit the instructions the AI uses when generating a quiz.",
+  fields: {
+    prefix: {
+      label: "Prefix",
+      placeholder:
+        "You are an expert instructional designer creating quiz questions for college students.",
+    },
+    objectives: {
+      label: "Objectives",
+      placeholder:
+        "Test recall and understanding of the key concepts in the uploaded material.",
+    },
+    constraints: {
+      label: "Constraints",
+      placeholder:
+        "Generate between 25 and 50 questions. Match the selected question format exactly. Keep language clear and unambiguous.",
+    },
+    suffix: {
+      label: "Suffix",
+      placeholder:
+        "Return the quiz in the exact JSON structure expected by the application.",
+    },
+  },
+  saveLabel: "Save Changes",
+  savingLabel: "Saving...",
+  savedMessage: "Prompt updated",
+  errorMessage: "Something went wrong. Please try again.",
+};
 
 const EMPTY_PROMPT: PromptFields = {
   prefix: "",
@@ -63,7 +93,7 @@ export default function PromptPage() {
           <p className="text-sm text-slate-400 mb-6">{copy.subtitle}</p>
 
           <form onSubmit={handleSave} className="flex flex-col gap-5">
-            <div className="flex gap-6 min-h-[420px]">
+            <div className="flex gap-6 min-h-105">
               {/* Left panel: field list */}
               <div className="w-56 shrink-0 border-r border-slate-200 pr-4">
                 <nav className="flex flex-col gap-1">
@@ -96,7 +126,7 @@ export default function PromptPage() {
                   value={values[activeField]}
                   onChange={(e) => updateField(activeField, e.target.value)}
                   placeholder={activeMeta.placeholder}
-                  className="flex-1 w-full min-h-[380px] rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all resize-none"
+                  className="flex-1 w-full min-h-95 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all resize-none"
                 />
               </div>
             </div>
@@ -105,7 +135,7 @@ export default function PromptPage() {
               <button
                 type="submit"
                 disabled={saveMutation.isPending}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
+                className="inline-flex items-center gap-2 bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
               >
                 {saveMutation.isPending ? copy.savingLabel : copy.saveLabel}
               </button>
