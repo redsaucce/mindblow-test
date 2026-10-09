@@ -4,7 +4,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Brain, ExternalLink, X, Menu } from "lucide-react";
-import { navbar as copy } from "@/data/layout/navbar";
+
+const copy = {
+  brand: "MindBlow",
+  ctaLabel: "Get Started Free",
+  links: [
+    { label: "Home", to: "/", section: null },
+    { label: "Features", to: "/", section: "features" },
+    { label: "How It Works", to: "/", section: "how-it-works" },
+    { label: "FAQs", to: "/", section: "faqs" },
+    { label: "About Us", to: "/about", section: null },
+  ],
+} as const;
+
 import { useModal } from "@/hooks/use-modal";
 import { useToggle } from "@/hooks/use-toggle";
 
@@ -131,7 +143,7 @@ export default function Navbar() {
       <nav className="sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-100 shadow-sm shadow-slate-200/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20 md:shadow-lg md:shadow-emerald-600/30">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20 md:shadow-lg md:shadow-emerald-600/30">
               <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
             </div>
             <span className="font-heading font-bold text-lg text-slate-700">
@@ -178,14 +190,14 @@ export default function Navbar() {
       </nav>
 
       <div
-        className={`lg:hidden fixed inset-0 z-[60] w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed inset-0 z-60 w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-green-700 flex items-center justify-center shadow-md shadow-emerald-700/20">
                 <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
               </div>
               <span className="font-heading font-bold text-lg text-slate-700">

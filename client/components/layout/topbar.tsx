@@ -2,7 +2,19 @@
 
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
-import { pageTitles, defaultPageTitle } from "@/data/layout/topbar";
+
+const pageTitles: Record<string, string> = {
+  "/user": "",
+  "/user/quizzes": "My Quizzes",
+  "/admin": "Overview",
+  "/admin/users": "User Management",
+  "/admin/logs": "Activity Logs",
+  "/admin/announcements": "Send Announcement",
+  "/admin/prompt": "Prompt",
+};
+
+const defaultPageTitle = "Dashboard";
+
 import { useTopbarActions } from "@/hooks/use-topbar-actions";
 
 interface TopbarProps {

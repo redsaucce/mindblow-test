@@ -5,7 +5,40 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsUpDown, LogOut, X } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
-import { sidebarLinks, sidebarAccount } from "@/data/layout/sidebar";
+
+interface SidebarLink {
+  label: string;
+  href: string;
+}
+
+const sidebarLinks: Record<"user" | "admin", SidebarLink[]> = {
+  user: [
+    { label: "Generate Quiz", href: "/user" },
+    { label: "My Quizzes", href: "/user/quizzes" },
+  ],
+  admin: [
+    { label: "Overview", href: "/admin" },
+    { label: "User Management", href: "/admin/users" },
+    { label: "Activity Logs", href: "/admin/logs" },
+    { label: "Prompt", href: "/admin/prompt" },
+  ],
+};
+
+const sidebarAccount = {
+  brand: "MindBlow",
+  userEmail: "student@mindblow.com",
+  adminEmail: "admin@mindblow.com",
+  adminLabel: "Administrator",
+  logoutLabel: "Logout",
+  logoutDialog: {
+    title: "Log out?",
+    description: "You'll need to sign in again with a new magic link to continue.",
+    cancelLabel: "Cancel",
+    confirmLabel: "Log out",
+    loggingOutLabel: "Logging out...",
+  },
+} as const;
+
 import { useToggle } from "@/hooks/use-toggle";
 import { getMe, logout } from "@/services/public/auth-service";
 
@@ -75,7 +108,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-[60] w-full lg:z-50 lg:w-64 shrink-0 flex flex-col bg-white lg:border-r lg:border-slate-100 shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-60 w-full lg:z-50 lg:w-64 shrink-0 flex flex-col bg-white lg:border-r lg:border-slate-100 shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

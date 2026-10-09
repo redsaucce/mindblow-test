@@ -1,7 +1,21 @@
 "use client";
 
 import { Brain } from "lucide-react";
-import { footer as copy } from "@/data/layout/footer";
+
+const copy = {
+  brand: {
+    name: "MindBlow",
+    tagline: "Built for Students. Powered by AI.",
+  },
+  legalLinks: ["Privacy Policy", "Terms of Service", "Disclaimer"],
+  contactInfo: [
+    { text: "mindblow@mindblow.online", href: "mailto:mindblow@mindblow.online" },
+    { text: "+63 938 193 7191", href: "tel:+639381937191" },
+    { text: "Bayombong, Nueva Vizcaya, PH", href: "#" },
+  ],
+  copyrightSuffix: "All rights reserved.",
+} as const;
+
 import { useModal } from "@/hooks/use-modal";
 
 export default function Footer() {
@@ -15,7 +29,7 @@ export default function Footer() {
           {/* Brand column */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-green-700 flex items-center justify-center">
                 <Brain className="w-4 h-4 text-white" strokeWidth={2.2} />
               </div>
               <span className="font-heading text-white/90 font-bold text-lg">
