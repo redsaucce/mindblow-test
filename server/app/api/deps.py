@@ -1,5 +1,3 @@
-from collections.abc import AsyncGenerator
-
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,9 +9,7 @@ from app.models.user_data import Role, User
 from app.services.auth_service import get_user_by_id, is_token_revoked
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async for session in get_session():
-        yield session
+get_db = get_session
 
 
 async def get_current_user(

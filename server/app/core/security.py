@@ -55,11 +55,21 @@ def set_refresh_cookie(response, token: str) -> None:
 
 
 def clear_session_cookie(response) -> None:
-    response.delete_cookie(key=settings.cookie_name)
+    response.delete_cookie(
+        key=settings.cookie_name,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
 
 
 def clear_refresh_cookie(response) -> None:
-    response.delete_cookie(key=settings.refresh_cookie_name)
+    response.delete_cookie(
+        key=settings.refresh_cookie_name,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
 
 
 def generate_csrf_token() -> str:
@@ -77,4 +87,9 @@ def set_csrf_cookie(response, token: str) -> None:
 
 
 def clear_csrf_cookie(response) -> None:
-    response.delete_cookie(key=settings.csrf_cookie_name)
+    response.delete_cookie(
+        key=settings.csrf_cookie_name,
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
