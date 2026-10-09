@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ImageOff } from "lucide-react";
+import { useToggle } from "@/hooks/use-toggle";
+import SkeletonBlock from "@/components/ui/skeleton-block";
+
 const aboutHero = {
   title: "Building the Future of ",
   highlight: "Smart Learning",
@@ -42,19 +45,9 @@ const aboutInfoCards = [
   },
 ];
 
-import { useToggle } from "@/hooks/use-toggle";
-
 /* ------------------------------------------------------------------ */
 /*  Skeleton primitives                                                 */
 /* ------------------------------------------------------------------ */
-
-function SkeletonBlock({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-linear-to-r from-emerald-200 to-green-200 ${className}`}
-    />
-  );
-}
 
 function InfoCardSkeleton() {
   return (
@@ -91,7 +84,7 @@ function AboutSkeleton() {
       <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
         <div className="absolute top-1/4 left-1/4 w-125 h-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-105 h-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/3 w-[320px] h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
         <div className="absolute top-[16%] right-[12%] w-32 h-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[18%] left-[12%] w-24 h-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
@@ -210,7 +203,7 @@ export default function About({ isLoading }: { isLoading?: boolean } = {}) {
       <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
         <div className="absolute top-1/4 left-1/4 w-125 h-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-105 h-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/3 w-[320px] h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
         <div className="absolute top-[16%] right-[12%] w-32 h-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[18%] left-[12%] w-24 h-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 

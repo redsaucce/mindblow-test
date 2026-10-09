@@ -20,7 +20,7 @@ export const privacy: LegalContentItem = {
     },
     {
       q: "Your rights",
-      a: "You can request a copy of your data, ask us to delete your account and all associated data, or opt out of non-essential communications at any time by contacting hello@mindblow.com.",
+      a: "You can request a copy of your data, ask us to delete your account and all associated data, or opt out of non-essential communications at any time by contacting mindblow@mindblow.online.",
     },
   ],
 };

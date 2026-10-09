@@ -1,22 +1,22 @@
 "use client";
 
 import { Brain } from "lucide-react";
+import { LEGAL_DATA } from "@/data/modal/legal";
+import { useModal } from "@/hooks/use-modal";
 
 const copy = {
   brand: {
     name: "MindBlow",
     tagline: "Built for Students. Powered by AI.",
   },
-  legalLinks: ["Privacy Policy", "Terms of Service", "Disclaimer"],
+  legalLinks: Object.keys(LEGAL_DATA),
   contactInfo: [
     { text: "mindblow@mindblow.online", href: "mailto:mindblow@mindblow.online" },
     { text: "+63 938 193 7191", href: "tel:+639381937191" },
-    { text: "Bayombong, Nueva Vizcaya, PH", href: "#" },
+    { text: "Bayombong, Nueva Vizcaya, PH", href: null },
   ],
   copyrightSuffix: "All rights reserved.",
 } as const;
-
-import { useModal } from "@/hooks/use-modal";
 
 export default function Footer() {
   const { openLegal } = useModal();
@@ -64,12 +64,16 @@ export default function Footer() {
             <ul className="space-y-3">
               {copy.contactInfo.map(({ text, href }) => (
                 <li key={text}>
-                  <a
-                    href={href}
-                    className="text-sm underline-offset-4 hover:text-white hover:underline focus-visible:text-white focus-visible:underline transition-colors"
-                  >
-                    {text}
-                  </a>
+                  {href ? (
+                    <a
+                      href={href}
+                      className="text-sm underline-offset-4 hover:text-white hover:underline focus-visible:text-white focus-visible:underline transition-colors"
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    <span className="text-sm">{text}</span>
+                  )}
                 </li>
               ))}
             </ul>

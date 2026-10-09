@@ -3,7 +3,6 @@ import { Upload, Brain, Zap } from "lucide-react";
 
 const processHeader = {
   variant: "green" as const,
-  prefix: "Simple Process",
   title: "From Upload to Quiz in 3 Steps",
   subtitle: "No setup, no tutorials — just results.",
 };
@@ -12,7 +11,7 @@ const steps = [
   {
     num: "01",
     title: "Upload Your Document",
-    desc: "Upload your PDF or DOCX files, then pick the quiz category and number of questions.",
+    desc: "Upload your PDF or DOCX files, then pick the quiz type and number of questions.",
     icon: Upload,
   },
   {
@@ -29,7 +28,6 @@ const steps = [
   },
 ];
 
-
 export default function Process() {
   const content = processHeader;
 
@@ -45,10 +43,10 @@ export default function Process() {
         </div>
         <div className="relative grid gap-14 md:grid-cols-3 md:gap-10">
           <div className="absolute left-[16.66%] right-[16.66%] top-10 hidden h-px bg-linear-to-r from-transparent via-emerald-300 to-transparent md:block" />
-          {steps.map((step, i) => {
+          {steps.map((step) => {
             const Icon = step.icon;
             return (
-              <div key={i} className="relative flex flex-col items-center text-center">
+              <div key={step.num} className="relative flex flex-col items-center text-center">
                 <div className="relative mb-6 md:mb-8 flex items-center justify-center">
                   <div className="flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-[1.35rem] md:rounded-[1.75rem] bg-linear-to-br from-emerald-500 to-green-600 text-white shadow-lg md:shadow-xl shadow-emerald-500/20 md:shadow-emerald-500/25">
                     <Icon className="h-6 w-6 md:h-8 md:w-8" />

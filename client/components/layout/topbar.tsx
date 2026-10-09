@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import { useTopbarActions } from "@/hooks/use-topbar-actions";
 
 const pageTitles: Record<string, string> = {
   "/user": "",
@@ -9,13 +10,10 @@ const pageTitles: Record<string, string> = {
   "/admin": "Overview",
   "/admin/users": "User Management",
   "/admin/logs": "Activity Logs",
-  "/admin/announcements": "Send Announcement",
   "/admin/prompt": "Prompt",
 };
 
 const defaultPageTitle = "Dashboard";
-
-import { useTopbarActions } from "@/hooks/use-topbar-actions";
 
 interface TopbarProps {
   onOpenSidebar: () => void;

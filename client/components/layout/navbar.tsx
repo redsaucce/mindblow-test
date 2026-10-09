@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Brain, ExternalLink, X, Menu } from "lucide-react";
+import { useModal } from "@/hooks/use-modal";
+import { useToggle } from "@/hooks/use-toggle";
 
 const copy = {
   brand: "MindBlow",
@@ -16,9 +18,6 @@ const copy = {
     { label: "About Us", to: "/about", section: null },
   ],
 } as const;
-
-import { useModal } from "@/hooks/use-modal";
-import { useToggle } from "@/hooks/use-toggle";
 
 const SECTION_IDS = copy.links
   .filter((l) => l.section)
@@ -190,6 +189,8 @@ export default function Navbar() {
       </nav>
 
       <div
+        inert={!mobileOpen}
+        aria-hidden={!mobileOpen}
         className={`lg:hidden fixed inset-0 z-60 w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}

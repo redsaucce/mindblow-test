@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsUpDown, LogOut, X } from "lucide-react";
 import AlertModal from "@/components/ui/alert-modal";
+import { useToggle } from "@/hooks/use-toggle";
+import { getMe, logout } from "@/services/public/auth-service";
 
 interface SidebarLink {
   label: string;
@@ -26,8 +28,7 @@ const sidebarLinks: Record<"user" | "admin", SidebarLink[]> = {
 
 const sidebarAccount = {
   brand: "MindBlow",
-  userEmail: "student@mindblow.com",
-  adminEmail: "admin@mindblow.com",
+  accountFallbackLabel: "Account",
   adminLabel: "Administrator",
   logoutLabel: "Logout",
   logoutDialog: {
@@ -38,9 +39,6 @@ const sidebarAccount = {
     loggingOutLabel: "Logging out...",
   },
 } as const;
-
-import { useToggle } from "@/hooks/use-toggle";
-import { getMe, logout } from "@/services/public/auth-service";
 
 interface SidebarProps {
   open: boolean;
@@ -61,15 +59,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         if (!cancelled) setEmail(me.email);
       })
       .catch(() => {
-        // Silently keep null — falls back to a static placeholder below
-        // rather than showing an error in the sidebar over something this minor.
+        // Keep null and fall back to a neutral label below, rather than
+        // showing an error in the sidebar over something this minor.
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const displayEmail = email ?? (role === "user" ? sidebarAccount.userEmail : sidebarAccount.adminEmail);
+  const displayEmail = email ?? sidebarAccount.accountFallbackLabel;
 
   const {
     value: accountOpen,
@@ -96,8 +94,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     try {
       await logout();
     } catch {
-      // Intentionally swallowed — see notes below. Redirect happens
-      // regardless of whether the server call succeeded.
+      // Intentionally swallowed. The redirect happens regardless of
+      // whether the server call succeeded.
     } finally {
       setLogoutConfirmOpen(false);
       setIsLoggingOut(false);

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, ChevronDown, ArrowDown, Upload, Brain, FileCheck2 } from "lucide-react";
+import { useModal } from "@/hooks/use-modal";
+import SkeletonBlock from "@/components/ui/skeleton-block";
+
 const heroContent = {
   titleStart: "Turn Your",
   titleHighlight: "Course Materials",
@@ -11,7 +14,6 @@ const heroContent = {
     "From PDF or DOCX to a ready-made quiz — no prompting required. Study smarter, retain more, score higher.",
   primaryCta: "Generate Your First Quiz",
   secondaryCta: "Explore Features",
-  
   process: [
     {
       icon: Upload,
@@ -34,19 +36,9 @@ const heroContent = {
   ],
 };
 
-import { useModal } from "@/hooks/use-modal";
-
 /* ------------------------------------------------------------------ */
 /*  Skeleton primitives                                                */
 /* ------------------------------------------------------------------ */
-
-function SkeletonBlock({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-linear-to-r from-emerald-200 to-green-200 ${className}`}
-    />
-  );
-}
 
 function ProcessIllustrationSkeleton() {
   return (
@@ -79,7 +71,7 @@ function HeroSkeleton() {
       {/* Glowing blobs (kept for visual continuity) */}
       <div className="absolute top-1/4 left-1/4 h-125 w-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 h-105 w-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 right-1/3 h-80 w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/3 h-80 w-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
       <div className="absolute top-[16%] right-[12%] h-32 w-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[18%] left-[12%] h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
@@ -195,7 +187,7 @@ export default function Hero({ isLoading }: { isLoading?: boolean } = {}) {
       {/* Glowing blobs */}
       <div className="absolute top-1/4 left-1/4 h-125 w-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 h-105 w-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 right-1/3 h-80 w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/3 h-80 w-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
       <div className="absolute top-[16%] right-[12%] h-32 w-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[18%] left-[12%] h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
