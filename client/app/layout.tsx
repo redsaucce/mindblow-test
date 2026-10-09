@@ -13,7 +13,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mindblow-test.vercel.app"),
+  metadataBase: new URL("https://mindblow.online"),
   title: "MindBlow",
   description: "AI quiz generator",
 };
