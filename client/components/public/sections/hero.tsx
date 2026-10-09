@@ -1,8 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, ChevronDown, ArrowDown } from "lucide-react";
-import { heroContent } from "@/data/public/hero";
+import { ExternalLink, ChevronDown, ArrowDown, Upload, Brain, FileCheck2 } from "lucide-react";
+const heroContent = {
+  titleStart: "Turn Your",
+  titleHighlight: "Course Materials",
+  titleMiddle: "Into a",
+  titleAccent: "Quiz",
+  subtitle:
+    "From PDF or DOCX to a ready-made quiz — no prompting required. Study smarter, retain more, score higher.",
+  primaryCta: "Generate Your First Quiz",
+  secondaryCta: "Explore Features",
+  
+  process: [
+    {
+      icon: Upload,
+      title: "Upload File",
+      desc: "PDF or DOCX",
+      tone: "from-emerald-500 to-green-600",
+    },
+    {
+      icon: Brain,
+      title: "AI Processing",
+      desc: "Concept extraction",
+      tone: "from-green-600 to-green-700",
+    },
+    {
+      icon: FileCheck2,
+      title: "Quiz Ready",
+      desc: "Practice instantly",
+      tone: "from-lime-500 to-emerald-600",
+    },
+  ],
+};
+
 import { useModal } from "@/hooks/use-modal";
 
 /* ------------------------------------------------------------------ */
@@ -12,7 +43,7 @@ import { useModal } from "@/hooks/use-modal";
 function SkeletonBlock({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gradient-to-r from-emerald-200 to-green-200 ${className}`}
+      className={`animate-pulse rounded-md bg-linear-to-r from-emerald-200 to-green-200 ${className}`}
     />
   );
 }
@@ -44,11 +75,11 @@ function ProcessIllustrationSkeleton() {
 
 function HeroSkeleton() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 min-h-[calc(100vh-65px)] flex items-center">
+    <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 min-h-[calc(100vh-65px)] flex items-center">
       {/* Glowing blobs (kept for visual continuity) */}
-      <div className="absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 h-[420px] w-[420px] rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 right-1/3 h-[320px] w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 h-125 w-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 h-105 w-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/3 h-80 w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
       <div className="absolute top-[16%] right-[12%] h-32 w-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[18%] left-[12%] h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
@@ -101,7 +132,7 @@ function ProcessIllustration() {
                 <div
                   className={`flex items-center gap-4 rounded-2xl p-8 shadow-sm ${
                     isProcessing
-                      ? "border border-emerald-700 bg-gradient-to-r from-emerald-600 to-green-700"
+                      ? "border border-emerald-700 bg-linear-to-r from-emerald-600 to-green-700"
                       : "border border-slate-100 bg-white"
                   }`}
                 >
@@ -109,7 +140,7 @@ function ProcessIllustration() {
                     className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-lg ${
                       isProcessing
                         ? "bg-white text-emerald-700 shadow-emerald-900/20"
-                        : `bg-gradient-to-br ${item.tone} text-white shadow-emerald-500/20`
+                        : `bg-linear-to-br ${item.tone} text-white shadow-emerald-500/20`
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -160,11 +191,11 @@ export default function Hero({ isLoading }: { isLoading?: boolean } = {}) {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 min-h-[calc(100vh-65px)] flex items-center">
+    <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 min-h-[calc(100vh-65px)] flex items-center">
       {/* Glowing blobs */}
-      <div className="absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 h-[420px] w-[420px] rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 right-1/3 h-[320px] w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 h-125 w-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 h-105 w-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/3 h-80 w-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
       <div className="absolute top-[16%] right-[12%] h-32 w-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[18%] left-[12%] h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
@@ -174,14 +205,14 @@ export default function Hero({ isLoading }: { isLoading?: boolean } = {}) {
             <h1 className="font-heading text-4xl md:text-6xl xl:text-7xl font-black text-green-950 leading-[1.05] tracking-tight mb-6">
               {heroContent.titleStart}{" "}
               <span className="relative inline-block">
-                <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-700">
+                <span className="relative z-10 text-transparent bg-clip-text bg-linear-to-r from-emerald-600 to-green-700">
                   {heroContent.titleHighlight}
                 </span>
-                <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-700 rounded-full opacity-40" />
+                <span className="absolute -bottom-1 left-0 right-0 h-1 bg-linear-to-r from-emerald-500 to-green-700 rounded-full opacity-40" />
               </span>
               <br />
               {heroContent.titleMiddle}{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-500 to-emerald-600">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-lime-500 to-emerald-600">
                 {heroContent.titleAccent}
               </span>
             </h1>
@@ -194,7 +225,7 @@ export default function Hero({ isLoading }: { isLoading?: boolean } = {}) {
               <button
                 type="button"
                 onClick={openAuth}
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-emerald-500/25 transition-all duration-200 hover:from-emerald-500 hover:to-green-600 hover:shadow-emerald-500/40 sm:px-8 sm:py-4 sm:text-base"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-emerald-500/25 transition-all duration-200 hover:from-emerald-500 hover:to-green-600 hover:shadow-emerald-500/40 sm:px-8 sm:py-4 sm:text-base"
               >
                 {heroContent.primaryCta}
                 <ExternalLink className="h-5 w-5" />

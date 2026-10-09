@@ -1,5 +1,34 @@
 import SectionHeader from "@/components/ui/section-header";
-import { processHeader, steps } from "@/data/public/process";
+import { Upload, Brain, Zap } from "lucide-react";
+
+const processHeader = {
+  variant: "green" as const,
+  prefix: "Simple Process",
+  title: "From Upload to Quiz in 3 Steps",
+  subtitle: "No setup, no tutorials — just results.",
+};
+
+const steps = [
+  {
+    num: "01",
+    title: "Upload Your Document",
+    desc: "Upload your PDF or DOCX files, then pick the quiz category and number of questions.",
+    icon: Upload,
+  },
+  {
+    num: "02",
+    title: "AI Processes in Seconds",
+    desc: "Quizzes are built entirely from your uploaded content, focused only on the topics that matter.",
+    icon: Brain,
+  },
+  {
+    num: "03",
+    title: "Take Your Quiz",
+    desc: "Review and practice using your generated quizzes whenever it's convenient for you.",
+    icon: Zap,
+  },
+];
+
 
 export default function Process() {
   const content = processHeader;
@@ -15,13 +44,13 @@ export default function Process() {
           />
         </div>
         <div className="relative grid gap-14 md:grid-cols-3 md:gap-10">
-          <div className="absolute left-[16.66%] right-[16.66%] top-10 hidden h-px bg-gradient-to-r from-transparent via-emerald-300 to-transparent md:block" />
+          <div className="absolute left-[16.66%] right-[16.66%] top-10 hidden h-px bg-linear-to-r from-transparent via-emerald-300 to-transparent md:block" />
           {steps.map((step, i) => {
             const Icon = step.icon;
             return (
               <div key={i} className="relative flex flex-col items-center text-center">
                 <div className="relative mb-6 md:mb-8 flex items-center justify-center">
-                  <div className="flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-[1.35rem] md:rounded-[1.75rem] bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg md:shadow-xl shadow-emerald-500/20 md:shadow-emerald-500/25">
+                  <div className="flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-[1.35rem] md:rounded-[1.75rem] bg-linear-to-br from-emerald-500 to-green-600 text-white shadow-lg md:shadow-xl shadow-emerald-500/20 md:shadow-emerald-500/25">
                     <Icon className="h-6 w-6 md:h-8 md:w-8" />
                   </div>
                   <div className="absolute -right-3 -top-3 md:-right-4 md:-top-4 flex h-9 min-w-9 md:h-11 md:min-w-11 items-center justify-center rounded-full bg-emerald-500 px-2.5 md:px-3 text-xs md:text-sm font-black tracking-wide text-white shadow-lg shadow-emerald-500/25 md:shadow-emerald-500/30">

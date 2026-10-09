@@ -32,7 +32,7 @@ function AccordionItem({
           {q}
         </span>
         <ChevronDown
-          className={`w-5 h-5 text-slate-400 flex-shrink-0 transition-transform duration-200 group-hover:text-green-700 ${
+          className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-green-700 ${
             open ? "rotate-180" : ""
           }`}
         />

@@ -160,7 +160,7 @@ export default function AuthModal() {
       header={
         isForm ? (
           <div className="flex items-center gap-3 px-8 pt-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <h2 className="font-heading text-xl font-bold text-slate-900">
@@ -217,7 +217,7 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-200 mt-2 disabled:opacity-60 disabled:hover:translate-y-0"
+              className="w-full inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-200 mt-2 disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {isLoading ? (
                 <>
@@ -253,7 +253,7 @@ export default function AuthModal() {
           {feedback.retry && (
             <button
               onClick={handleRetry}
-              className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5"
+              className="mt-6 inline-flex items-center gap-2 bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5"
             >
               {copy.retryLabel}
               <ArrowRight className="w-3.5 h-3.5" />
@@ -262,7 +262,7 @@ export default function AuthModal() {
           {feedback.differentEmail && (
             <button
               onClick={handleUseDifferentEmail}
-              className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5"
+              className="mt-6 inline-flex items-center gap-2 bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5"
             >
               {copy.differentEmailLabel}
               <ArrowRight className="w-3.5 h-3.5" />

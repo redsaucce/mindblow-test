@@ -60,7 +60,7 @@ export default function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
@@ -78,7 +78,7 @@ export default function Modal({
           </button>
         ) : null}
         {header ? (
-          <div className={`flex-shrink-0 ${headerClassName}`}>{header}</div>
+          <div className={`shrink-0 ${headerClassName}`}>{header}</div>
         ) : null}
         <div
           ref={scrollContainerRef}
@@ -97,7 +97,7 @@ export default function Modal({
           <ScrollBar containerRef={scrollContainerRef} />
         ) : null}
         {footer ? (
-          <div className={`flex-shrink-0 ${footerClassName}`}>{footer}</div>
+          <div className={`shrink-0 ${footerClassName}`}>{footer}</div>
         ) : null}
       </div>
     </div>

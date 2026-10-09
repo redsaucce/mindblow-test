@@ -2,7 +2,15 @@
 
 import { ExternalLink } from "lucide-react";
 import SectionHeader from "@/components/ui/section-header";
-import { pricingHeader, pricingCta } from "@/data/public/pricing";
+const pricingHeader = {
+  variant: "white" as const,
+  title: "Completely Free to Use",
+  subtitle:
+    "MindBlow is 100% free right now — no card, no fees, no limits. Quiz as much as you want while we're in early access.",
+};
+
+const pricingCta = "Start Generating Quizzes";
+
 import { useModal } from "@/hooks/use-modal";
 
 export default function Pricing() {
@@ -13,7 +21,7 @@ export default function Pricing() {
   return (
     <section id="pricing" className="bg-white">
       <div className="relative overflow-hidden px-6 py-28">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-green-700 to-green-900" />
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-700 via-green-700 to-green-900" />
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-green-300/10 blur-3xl pointer-events-none" />
         <div className="relative max-w-5xl mx-auto">

@@ -2,13 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ImageOff } from "lucide-react";
-import {
-  storyIntro,
-  aboutInfoCards,
-  aboutHero,
-  aboutMedia,
-  storyToggleLabels,
-} from "@/data/public/about";
+const aboutHero = {
+  title: "Building the Future of ",
+  highlight: "Smart Learning",
+  subtitle:
+    "MindBlow started with a simple question — what if you could turn any document into an interactive quiz in seconds?",
+} as const;
+
+const aboutMedia = {
+  placeholderLabel: "Team photo coming soon",
+  placeholderLocation: "Bayombong, Nueva Vizcaya",
+} as const;
+
+const storyToggleLabels = {
+  more: "Read more",
+  less: "Read less",
+} as const;
+
+const storyIntro = {
+  title: "How It All Started",
+  preview:
+    "MindBlow started with a simple student problem: turning dense notes into useful quiz practice without wasting study time.",
+  previewSecondary:
+    "Built for college and undergraduate students, it helps turn uploaded study files into focused quiz material without the manual work.",
+  detail:
+    "At its core, MindBlow is built to make exam prep faster, clearer, and more accessible through AI-powered quiz generation.",
+};
+
+const aboutInfoCards = [
+  {
+    title: "What Drives Us",
+    description:
+      "We believe everyone deserves access to smart study tools — not just those who can afford expensive tutors or prep courses. Education should be a level playing field. Our mission is to democratize active learning by giving students, teachers, and self-learners a free AI-powered tool that turns any document into a personalized quiz in seconds.",
+  },
+  {
+    title: "Where We're Headed",
+    description:
+      "MindBlow is just getting started. We're building the future of document-powered learning, one quiz at a time. Our roadmap includes collaborative study rooms, spaced-repetition scheduling, LMS integrations for schools and universities, and deeper analytics to help learners pinpoint exactly where they need to focus.",
+  },
+];
+
 import { useToggle } from "@/hooks/use-toggle";
 
 /* ------------------------------------------------------------------ */
@@ -18,7 +51,7 @@ import { useToggle } from "@/hooks/use-toggle";
 function SkeletonBlock({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gradient-to-r from-emerald-200 to-green-200 ${className}`}
+      className={`animate-pulse rounded-md bg-linear-to-r from-emerald-200 to-green-200 ${className}`}
     />
   );
 }
@@ -55,10 +88,10 @@ function StorylineSkeleton() {
 function AboutSkeleton() {
   return (
     <main className="font-sans text-slate-900 bg-slate-50">
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/3 w-[320px] h-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
+        <div className="absolute top-1/4 left-1/4 w-125 h-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-105 h-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/3 w-[320px] h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
         <div className="absolute top-[16%] right-[12%] w-32 h-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[18%] left-[12%] w-24 h-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
@@ -75,7 +108,7 @@ function AboutSkeleton() {
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="grid md:grid-cols-2 gap-10 lg:gap-14 items-start">
-            <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-emerald-100 to-green-100 border border-emerald-100 animate-pulse" />
+            <div className="aspect-4/3 rounded-3xl bg-linear-to-br from-emerald-100 to-green-100 border border-emerald-100 animate-pulse" />
 
             <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
               <div className="md:col-span-2">
@@ -174,17 +207,17 @@ export default function About({ isLoading }: { isLoading?: boolean } = {}) {
 
   return (
     <main className="font-sans text-slate-900 bg-slate-50">
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/3 w-[320px] h-[320px] rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 py-24 md:py-32 px-6">
+        <div className="absolute top-1/4 left-1/4 w-125 h-125 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-105 h-105 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/3 w-[320px] h-80 rounded-full bg-emerald-300/14 blur-3xl pointer-events-none" />
         <div className="absolute top-[16%] right-[12%] w-32 h-32 rounded-full bg-green-300/14 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[18%] left-[12%] w-24 h-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
 
         <div className="relative mx-auto text-center">
           <h1 className="font-heading text-3xl md:text-6xl font-black text-green-950 mb-6 leading-tight">
             {aboutHero.title}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-700">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-600 to-green-700">
               {aboutHero.highlight}
             </span>
           </h1>
@@ -197,7 +230,7 @@ export default function About({ isLoading }: { isLoading?: boolean } = {}) {
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="grid md:grid-cols-2 gap-10 lg:gap-14 items-start">
-            <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-slate-200 to-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400 overflow-hidden">
+            <div className="aspect-4/3 rounded-3xl bg-linear-to-br from-slate-200 to-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400 overflow-hidden">
               <ImageOff className="w-16 h-16 mb-3 text-slate-300" />
               <span className="text-sm font-medium">{aboutMedia.placeholderLabel}</span>
               <span className="text-xs mt-1 text-slate-300">
