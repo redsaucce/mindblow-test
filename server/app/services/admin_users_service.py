@@ -5,6 +5,7 @@ from app.core.exceptions import CannotDeleteLastAdminError, CannotDeleteSelfErro
 from app.models.activity_log import ActivityType
 from app.models.quiz_data import Quiz
 from app.models.user_data import Role, User
+from app.services.activity_log_service import log_action
 
 
 async def list_users(db: AsyncSession) -> tuple[list[dict], int]:
@@ -40,8 +41,6 @@ async def list_users(db: AsyncSession) -> tuple[list[dict], int]:
 
 
 async def delete_user(db: AsyncSession, current_user_id: str, target_user_id: str, current_user_email: str) -> None:
-    from app.services.activity_log_service import log_action
-
     if current_user_id == target_user_id:
         raise CannotDeleteSelfError()
 

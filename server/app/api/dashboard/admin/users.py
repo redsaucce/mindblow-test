@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db, require_admin, verify_csrf
+from app.api.deps import get_db, require_admin, verify_csrf
 from app.models.user_data import User
 from app.schemas.admin_users import AdminUserListResponse, DeleteUserResponse
 from app.services.admin_users_service import delete_user, list_users

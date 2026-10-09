@@ -1,5 +1,6 @@
 import io
 import re
+import zipfile
 
 import pypdf
 from docx import Document as DocxDocument
@@ -21,6 +22,9 @@ DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessin
 PDF_CONTENT_TYPE = "application/pdf"
 
 _READ_CHUNK_SIZE = 1024 * 1024  # 1 MB per chunk
+
+# Limit on the expanded size of a DOCX, to block zip bombs.
+MAX_DOCX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
 
 
 async def _read_bounded(file: UploadFile) -> bytes:
@@ -79,9 +83,10 @@ def _extract_docx(raw_bytes: bytes) -> str:
     # gives an early, explicit rejection of XXE/billion-laughs-style payloads
     # before python-docx's own parsing runs.
     try:
-        import zipfile
-
         with zipfile.ZipFile(io.BytesIO(raw_bytes)) as zf:
+            uncompressed = sum(info.file_size for info in zf.infolist())
+            if uncompressed > MAX_DOCX_UNCOMPRESSED_BYTES:
+                raise UnsupportedFileTypeError("This file is too large once expanded. Please try a smaller file.")
             if "word/document.xml" in zf.namelist():
                 xml_bytes = zf.read("word/document.xml")
                 safe_parser = etree.XMLParser(

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,10 +10,20 @@ from app.services.activity_log_service import list_logs
 
 router = APIRouter()
 
+ActivityTab = Literal[
+    "all",
+    "registered",
+    "signed_in",
+    "generated",
+    "downloaded",
+    "quiz_deleted",
+    "user_deleted",
+]
+
 
 @router.get("", response_model=ActivityLogListResponse)
 async def get_admin_logs(
-    tab: str = "all",
+    tab: ActivityTab = "all",
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):

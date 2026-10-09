@@ -1,4 +1,5 @@
 import io
+import re
 import zipfile
 
 from docx import Document as DocxDocument
@@ -58,17 +59,35 @@ def export_quiz(quiz: Quiz, questions: list[QuizQuestion]) -> bytes:
     return buffer.getvalue()
 
 
+def _safe_filename(title: str) -> str:
+    """Replaces characters that are invalid in file names or would create folders."""
+    cleaned = re.sub(r'[\\/:*?"<>|]', "_", title).strip()
+    return cleaned or "Untitled Quiz"
+
+
+def _unique_name(base: str, used_lower: set[str]) -> str:
+    """Adds a number when the name is already used, so no quiz overwrites another."""
+    name, n = base, 2
+    while name.lower() in used_lower:
+        name = f"{base} ({n})"
+        n += 1
+    used_lower.add(name.lower())
+    return name
+
+
 def export_quizzes_zip(
     quizzes_with_questions: list[tuple[Quiz, list[QuizQuestion]]],
 ) -> tuple[bytes, list[str]]:
     zip_buffer = io.BytesIO()
     failed_titles: list[str] = []
+    used_names: set[str] = set()
 
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for quiz, questions in quizzes_with_questions:
             try:
                 docx_bytes = export_quiz(quiz, questions)
-                zf.writestr(f"{quiz.title}.docx", docx_bytes)
+                name = _unique_name(_safe_filename(quiz.title), used_names)
+                zf.writestr(f"{name}.docx", docx_bytes)
             except Exception:
                 failed_titles.append(quiz.title)
 

@@ -1,23 +1,6 @@
-"""RAG retrieval primitives (see rag-implementation-plan.md).
+"""Semantic deduplication of extracted document text.
 
-Currently used for one pipeline step: semantic deduplication of extracted
-document text, run once per document before the main generation prompt is
-assembled (see `deduplicate_chunks`).
-
-Multiple-choice distractor grounding (which used to consume
-`retrieve_related_chunks` and `embed_text` here, called once per MCQ
-question) was removed from `ai_service.py` — it made one extra Gemini call
-per question, which exhausted the free-tier rate limit (15 req/min) on
-quizzes with more than a few MC questions. `retrieve_related_chunks` and
-`embed_text` are kept below in case grounding is reintroduced later (e.g.
-batched into a single call), but nothing currently calls them.
-
-Nothing here is persisted — chunks and embeddings live only for the
-duration of a single `generate_quiz()` call, matching how the rest of the
-system already treats uploaded documents as transient input (never saved
-to disk or DB). No new dependency: embeddings use the same `google-genai`
-client `ai_service.py` already uses for generation, just a different model
-endpoint.
+Chunks and embeddings live only for the duration of one generate_quiz() call.
 """
 
 import math
@@ -29,17 +12,12 @@ from app.config import settings
 
 EMBEDDING_MODEL = "gemini-embedding-001"
 
-# Deduplication safeguards (see rag-implementation-plan.md "Safeguards
-# against false-positive collapsing"). Both are deliberately conservative —
+# Deduplication safeguards. Both are deliberately conservative —
 # biased toward under-collapsing rather than over-collapsing when uncertain,
 # since surviving near-duplicates only cost prompt space, while a wrongly
 # collapsed pair loses real content the quiz could've covered.
 DEDUP_SIMILARITY_THRESHOLD = 0.95
 DEDUP_MIN_CHUNK_CHARS = 500
-
-# How many related-but-different chunks to retrieve per correct answer when
-# grounding multiple-choice distractors.
-DISTRACTOR_TOP_K = 3
 
 _client = genai.Client(api_key=settings.gemini_api_key)
 
@@ -94,15 +72,6 @@ async def embed_chunks(texts: list[str]) -> list[Chunk]:
     ]
 
 
-async def embed_text(text: str) -> list[float]:
-    """Embeds a single piece of text (e.g. a question's correct answer)."""
-    response = await _client.aio.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=text,
-    )
-    return response.embeddings[0].values
-
-
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = math.sqrt(sum(x * x for x in a))
@@ -122,7 +91,6 @@ def deduplicate_chunks(chunks: list[Chunk]) -> list[Chunk]:
 
     This only ever removes text, never rewrites or merges it — the survivor
     of a collapsed group is the original text verbatim. See
-    rag-implementation-plan.md for why the threshold is set conservatively
     (0.95+) and why a shared-key-terms secondary check was considered and
     rejected.
     """
@@ -147,22 +115,3 @@ def deduplicate_chunks(chunks: list[Chunk]) -> list[Chunk]:
             survivors.append(chunk)
 
     return survivors
-
-
-def retrieve_related_chunks(
-    chunks: list[Chunk], answer_embedding: list[float], top_k: int = DISTRACTOR_TOP_K
-) -> list[str]:
-    """Returns the top_k chunk texts most similar to a correct answer's
-    embedding — content that's topically related without being the answer
-    itself. Used to ground multiple-choice distractor generation instead of
-    letting the model invent wrong answers ungrounded in the source
-    document."""
-    if not chunks:
-        return []
-
-    scored = [
-        (_cosine_similarity(chunk.embedding, answer_embedding), chunk)
-        for chunk in chunks
-    ]
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [chunk.text for _, chunk in scored[:top_k]]

@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 import nh3
@@ -12,7 +13,8 @@ from app.schemas.quiz import QuestionResponse, QuizType
 TITLE_MAX_LENGTH = 50
 GEMINI_MODEL = "gemini-3.1-flash-lite"
 
-_client = genai.Client(api_key=settings.gemini_api_key)
+_client = genai.Client(api_key=settings.gemini_api_key, http_options={"timeout": 60_000})
+logger = logging.getLogger(__name__)
 
 
 class GeneratedQuiz:
@@ -59,7 +61,6 @@ async def generate_quiz(
     prompt_context: PromptContext,
 ) -> GeneratedQuiz:
     prompt = _assemble_prompt(extracted_text, quiz_type, question_count, prompt_context)
-    print(f"PROMPT LENGTH: {len(prompt)} characters")
 
     start = time.monotonic()
     try:
@@ -70,23 +71,22 @@ async def generate_quiz(
         )
         elapsed = time.monotonic() - start
         raw_text = response.text
-        print(f"GEMINI CALL SUCCEEDED in {elapsed:.1f}s")
-        print(f"GEMINI RAW RESPONSE:\n{raw_text}\n")
+        logger.info("Gemini call succeeded in %.1fs", elapsed)
     except Exception as e:
         elapsed = time.monotonic() - start
-        print(f"GEMINI ERROR after {elapsed:.1f}s: {type(e).__name__}: {e}")
+        logger.error("Gemini call failed after %.1fs (%s)", elapsed, type(e).__name__)
         raise AIGenerationFailedError() from e
 
     try:
         parsed = json.loads(raw_text)
     except (json.JSONDecodeError, TypeError) as e:
-        print(f"JSON PARSE ERROR: {type(e).__name__}: {e}")
+        logger.error("Gemini response was not valid JSON (%s)", type(e).__name__)
         raise AIGenerationFailedError("The AI returned a malformed response. Please try again.") from e
 
     try:
         quiz = _validate_and_build(parsed, quiz_type, question_count)
     except Exception as e:
-        print(f"VALIDATION ERROR: {type(e).__name__}: {e}")
+        logger.error("Gemini response failed validation (%s)", type(e).__name__)
         raise
 
     return quiz
@@ -128,6 +128,7 @@ def _validate_and_build(parsed: dict, quiz_type: QuizType, question_count: int) 
             options = [nh3.clean(str(o)) for o in options]
             answer = nh3.clean(answer)
         elif quiz_type == "true_false":
+            answer = answer.capitalize()
             if answer not in ("True", "False"):
                 raise AIGenerationFailedError(
                     "The AI returned a malformed true/false question. Please try again."
