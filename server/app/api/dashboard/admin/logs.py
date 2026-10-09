@@ -12,11 +12,10 @@ router = APIRouter()
 @router.get("", response_model=ActivityLogListResponse)
 async def get_admin_logs(
     tab: str = "all",
-    page: int = 1,
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    logs, total = await list_logs(db, tab=tab, page=page)
+    logs, total = await list_logs(db, tab=tab)
     return ActivityLogListResponse(
         logs=[
             ActivityLogEntry(

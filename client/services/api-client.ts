@@ -69,7 +69,13 @@ async function request<T>(
     let detail = "Something went wrong. Please try again.";
     try {
       const body = await response.json();
-      if (body?.detail) detail = body.detail;
+      if (Array.isArray(body?.detail)) {
+        detail = body.detail
+          .map((d: { msg?: string }) => d.msg ?? "Please check your input.")
+          .join(" ");
+      } else if (body?.detail) {
+        detail = body.detail;
+      }
     } catch {
       // response body wasn't JSON — keep the generic message
     }

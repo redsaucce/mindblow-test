@@ -7,7 +7,7 @@ from app.models.quiz_data import Quiz
 from app.models.user_data import Role, User
 
 
-async def list_users(db: AsyncSession, page: int = 1, page_size: int = 20) -> tuple[list[dict], int]:
+async def list_users(db: AsyncSession) -> tuple[list[dict], int]:
     query = (
         select(
             User.id,
@@ -19,8 +19,6 @@ async def list_users(db: AsyncSession, page: int = 1, page_size: int = 20) -> tu
         .outerjoin(Quiz, Quiz.user_id == User.id)
         .group_by(User.id)
         .order_by(User.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
     )
     result = await db.execute(query)
     rows = result.all()

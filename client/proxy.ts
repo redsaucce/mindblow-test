@@ -32,6 +32,11 @@ export async function proxy(request: NextRequest) {
   let role: "user" | "admin" | null = null;
   let response = NextResponse.next();
 
+  // Without the API URL we can't verify the session, so protected routes fail closed.
+  if (!API_URL) {
+    return isProtectedRoute ? NextResponse.redirect(new URL("/", request.url)) : response;
+  }
+
   if (API_URL) {
     const first = await checkAuth(cookieHeader);
     isAuthenticated = first.isAuthenticated;
@@ -47,9 +52,9 @@ export async function proxy(request: NextRequest) {
         });
 
         if (refreshResponse.ok) {
-          const setCookieHeader = refreshResponse.headers.get("set-cookie");
-          if (setCookieHeader) {
-            response.headers.append("set-cookie", setCookieHeader);
+          // Append each Set-Cookie separately. headers.get() would merge them into one string.
+          for (const cookie of refreshResponse.headers.getSetCookie()) {
+            response.headers.append("set-cookie", cookie);
           }
 
           const data = await refreshResponse.json();

@@ -11,9 +11,7 @@ async def log_action(db: AsyncSession, email: str, description: str, type: Activ
     await db.commit()
 
 
-async def list_logs(
-    db: AsyncSession, tab: str, page: int = 1, page_size: int = 20
-) -> tuple[list[ActivityLog], int]:
+async def list_logs(db: AsyncSession, tab: str) -> tuple[list[ActivityLog], int]:
     query = select(ActivityLog)
     count_query = select(func.count()).select_from(ActivityLog)
 
@@ -22,7 +20,6 @@ async def list_logs(
         count_query = count_query.where(ActivityLog.type == tab)
 
     query = query.order_by(ActivityLog.timestamp.desc())
-    query = query.offset((page - 1) * page_size).limit(page_size)
 
     result = await db.execute(query)
     logs = list(result.scalars().all())

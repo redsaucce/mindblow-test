@@ -2,7 +2,7 @@ import { terms, type LegalContentItem } from "./legal/terms";
 import { privacy } from "./legal/privacy";
 import { disclaimer } from "./legal/disclaimer";
 
-// Keys must match the labels in components/layout/footer.tsx (`copy.legalLinks`)
+// The footer builds its legal links from these keys, so they always match the modal.
 export const LEGAL_DATA: Record<string, LegalContentItem> = {
   "Privacy Policy": privacy,
   "Terms of Service": terms,

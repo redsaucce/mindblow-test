@@ -1,7 +1,6 @@
 import type { LegalContentItem } from "./terms";
 
 export const disclaimer: LegalContentItem = {
-  title: "Disclaimer",
   sections: [
     {
       q: "AI-generated content",
@@ -16,8 +15,8 @@ export const disclaimer: LegalContentItem = {
       a: "While MindBlow is designed to help you study more effectively, we cannot guarantee specific academic outcomes, test scores, or learning results. Individual results will vary.",
     },
     {
-      q: "External links and content",
-      a: "MindBlow may process content from URLs you provide. We are not responsible for the accuracy, legality, or appropriateness of third-party content processed through our service.",
+      q: "Uploaded documents",
+      a: "MindBlow generates quizzes from the PDF and DOCX files you upload. You are responsible for the content you upload, and we are not responsible for the accuracy, legality, or appropriateness of that content.",
     },
   ],
 };

@@ -11,11 +11,10 @@ router = APIRouter()
 
 @router.get("", response_model=AdminUserListResponse)
 async def get_admin_users(
-    page: int = 1,
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    users, total = await list_users(db, page=page)
+    users, total = await list_users(db)
     return AdminUserListResponse(users=users, total=total)
 
 

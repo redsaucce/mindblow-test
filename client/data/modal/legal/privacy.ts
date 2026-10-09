@@ -16,7 +16,7 @@ export const privacy: LegalContentItem = {
     },
     {
       q: "Third-party services",
-      a: "We use trusted third-party services like OpenAI for quiz generation and analytics tools for anonymous usage insights.",
+      a: "We use trusted third-party services: Google Gemini to generate quizzes from the documents you upload, and Resend to send sign-in emails.",
     },
     {
       q: "Your rights",
