@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, verify_csrf
@@ -50,7 +50,11 @@ async def send_magic_link(payload: MagicLinkRequest, db: AsyncSession = Depends(
         # the same response below.
         pass
     except Exception:
-        logger.exception("Failed to process magic-link request for %s", payload.email)
+        logger.exception("Failed to send magic-link email for %s", payload.email)
+        raise HTTPException(
+            status_code=503,
+            detail="We couldn't send the sign-in email. Please try again.",
+        )
     return MagicLinkResponse(message="If that email is valid, a sign-in link has been sent.")
 
 

@@ -60,7 +60,14 @@ async def request_magic_link(db: AsyncSession, email: str) -> None:
     db.add(token)
     await db.commit()
 
-    await send_magic_link_email(to_email=normalized_email, token=token_value)
+    try:
+        await send_magic_link_email(to_email=normalized_email, token=token_value)
+    except Exception:
+        # The email never left, so remove the unused token. Otherwise the
+        # rate limit would block a retry for the full expiry window.
+        await db.execute(delete(MagicLinkToken).where(MagicLinkToken.id == token.id))
+        await db.commit()
+        raise
 
 
 async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, str, str]:
@@ -233,14 +240,3 @@ async def is_token_revoked(db: AsyncSession, jti: str | None) -> bool:
 async def revoke_access_token(db: AsyncSession, jti: str, expires_at: datetime) -> None:
     db.add(RevokedToken(jti=jti, expires_at=expires_at))
     await db.commit()
-
-
-async def revoke_all_access_tokens_for_user(db: AsyncSession, user_id: str) -> None:
-    """Best-effort mass revocation: since access tokens are stateless JWTs, we
-    can't enumerate a user's currently-outstanding jtis. Session-terminating
-    actions (logout, account deletion) revoke the specific token presented at
-    that time via revoke_access_token; this helper is a placeholder for a
-    future per-user revocation epoch if a "log out everywhere" feature is
-    ever needed. Currently a no-op, kept as an explicit extension point rather
-    than silently absent."""
-    return None
