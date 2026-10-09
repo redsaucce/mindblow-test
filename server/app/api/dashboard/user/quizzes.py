@@ -1,6 +1,6 @@
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,9 @@ from app.services.quiz_service import (
 )
 
 router = APIRouter()
+
+# Most quizzes a single download request may include.
+MAX_DOWNLOAD_QUIZZES = 50
 
 
 def _content_disposition(filename: str) -> str:
@@ -83,6 +86,11 @@ async def download_quizzes(
     db: AsyncSession = Depends(get_db),
 ):
     quiz_ids = ids.split(",")
+    if len(quiz_ids) > MAX_DOWNLOAD_QUIZZES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You can download up to {MAX_DOWNLOAD_QUIZZES} quizzes at a time.",
+        )
 
     if len(quiz_ids) == 1:
         quiz, questions = await get_quiz_with_questions(db, str(user.id), quiz_ids[0])
