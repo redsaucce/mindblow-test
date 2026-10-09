@@ -13,6 +13,7 @@ import { type ActivityLogEntry, listLogs } from "@/services/dashboard/admin-logs
 const activityTabs = [
   { label: "All", value: "all" },
   { label: "Registered", value: "registered" },
+  { label: "Signed In", value: "signed_in" },
   { label: "Generated", value: "generated" },
   { label: "Downloaded", value: "downloaded" },
   { label: "Quiz Deleted", value: "quiz_deleted" },
@@ -24,7 +25,7 @@ const copy = {
     email: "USER EMAIL",
     activity: "ACTIVITY",
   },
-  summaryTemplate: "Showing {shown} of {total} entries",
+  summaryTemplate: "{shown} entries",
 };
 
 function toRelativeTime(isoDatetime: string): string {

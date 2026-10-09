@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { ChevronDown } from "lucide-react";
 
 export interface AccordionItemData {
@@ -22,10 +23,13 @@ function AccordionItem({
   open: boolean;
   onToggle: () => void;
 }) {
+  const panelId = useId();
   return (
     <div className="border-b border-slate-200 md:px-6">
       <button
         onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={panelId}
         className="w-full group flex items-center justify-between gap-4 py-4 text-left bg-white transition-colors"
       >
         <span className="pb-1 border-b-2 border-transparent font-semibold text-slate-900 text-sm md:text-base transition-colors duration-200 group-hover:text-green-700 group-hover:border-green-700">
@@ -38,6 +42,8 @@ function AccordionItem({
         />
       </button>
       <div
+        id={panelId}
+        inert={!open}
         className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
           open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}

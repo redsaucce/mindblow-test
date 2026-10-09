@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import DataTable from "@/components/ui/data-table";
 import AlertModal from "@/components/ui/alert-modal";
 import { emptyStates } from "@/data/ui/empty-states";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ApiError } from "@/services/api-client";
+import { getMe } from "@/services/public/auth-service";
 import {
   type AdminUser,
   listUsers,
@@ -22,7 +24,7 @@ const copy = {
     action: "ACTION",
   },
   actionLabel: "Delete",
-  summaryTemplate: "Showing {shown} of {total} users",
+  summaryTemplate: "{shown} users",
   deleteDialog: {
     title: "Delete User",
     description:
@@ -41,6 +43,7 @@ export default function UserList() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     data,
@@ -53,9 +56,16 @@ export default function UserList() {
 
   const users = data ?? [];
 
+  // The backend blocks deleting your own account, so hide the button on that row.
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+  });
+
   const showFeedback = (message: string) => {
     setFeedback(message);
-    setTimeout(() => setFeedback(""), 3000);
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = setTimeout(() => setFeedback(""), 3000);
   };
 
   const deleteMutation = useMutation({
@@ -68,9 +78,9 @@ export default function UserList() {
       setDeleteTarget(null);
       showFeedback(copy.feedback.deleted);
     },
-    onError: () => {
+    onError: (err) => {
       setDeleteTarget(null);
-      showFeedback(copy.feedback.error);
+      showFeedback(err instanceof ApiError ? err.detail : copy.feedback.error);
     },
   });
 
@@ -125,18 +135,19 @@ export default function UserList() {
       {
         id: "action",
         header: copy.columns.action,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => setDeleteTarget(row.original.id)}
-            className="text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 py-1 transition-colors"
-          >
-            {copy.actionLabel}
-          </button>
-        ),
+        cell: ({ row }) =>
+          row.original.id === me?.id ? null : (
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(row.original.id)}
+              className="text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 py-1 transition-colors"
+            >
+              {copy.actionLabel}
+            </button>
+          ),
       },
     ],
-    []
+    [me?.id]
   );
 
   return (

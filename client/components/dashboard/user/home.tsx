@@ -1,15 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Upload,
-  Wand2,
-  Download,
-  RefreshCw,
-  BookOpen,
-  Loader2,
-} from "lucide-react";
+import { useState, useRef, useCallback, type ChangeEvent, type DragEvent } from "react";
+import { Upload, Wand2 } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import {
   generateQuiz as generateQuizRequest,
@@ -17,7 +9,10 @@ import {
   type QuizTypeInput,
 } from "@/services/dashboard/user-quiz-generate-service";
 import { getQuizDetail } from "@/services/dashboard/user-quiz-list-service";
-import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
+import {
+  QuizResultModal,
+  type QuizResult,
+} from "@/components/dashboard/user/quiz-result-modal";
 
 const copy = {
   upload: {
@@ -58,37 +53,9 @@ const copy = {
     networkErrorMessage:
       "Couldn't reach the server. Check your connection and try again.",
   },
-  resultModal: {
-    title: "Quiz Generated!",
-    answerKeyLabel: "Answer Key",
-    downloadPrompt: "Download for the full quiz and answer key",
-    generateAnotherLabel: "Generate Another",
-    viewQuizzesLabel: "View My Quizzes",
-    downloadLabel: "Download Quiz",
-    downloadingLabel: "Preparing download...",
-    downloadSuccessMessage: "Download started",
-    downloadErrorMessage: "Download failed. Please try again.",
-  },
 };
 
 type GenerateStatus = "idle" | "generating" | "success" | "error";
-
-interface Question {
-  number: number;
-  text: string;
-  type: "mcq" | "tf" | "identification";
-  options?: string[];
-  answer: string;
-}
-
-interface QuizResult {
-  id: string;
-  documentName: string;
-  category: string;
-  quantity: number;
-  questions: Question[];
-  totalQuestions: number;
-}
 
 const QUIZ_TYPE_TO_SERVER: Record<string, QuizTypeInput> = {
   mcq: "multiple_choice",
@@ -151,173 +118,6 @@ async function generateQuiz(
   };
 }
 
-async function downloadQuiz(quizId: string) {
-  const result = await downloadQuizzesRequest([quizId]);
-  const url = URL.createObjectURL(result.blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = result.filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function QuizResultModal({
-  open,
-  result,
-  onClose,
-  onGenerateAnother,
-}: {
-  open: boolean;
-  result: QuizResult | null;
-  onClose: () => void;
-  onGenerateAnother: () => void;
-}) {
-  const router = useRouter();
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadMessage, setDownloadMessage] = useState("");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  if (!result) return null;
-
-  const previewQuestions = result.questions;
-
-  const handleClose = () => {
-    setDownloadMessage("");
-    onClose();
-  };
-
-  const handleGenerateAnotherClick = () => {
-    setDownloadMessage("");
-    onGenerateAnother();
-  };
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    setDownloadMessage("");
-    try {
-      await downloadQuiz(result.id);
-      setDownloadMessage(copy.resultModal.downloadSuccessMessage);
-    } catch {
-      setDownloadMessage(copy.resultModal.downloadErrorMessage);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleViewQuizzes = () => {
-    onClose();
-    router.push("/user/quizzes");
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      maxWidthClassName="max-w-2xl"
-      contentClassName="px-6 pb-6"
-      scrollContainerRef={scrollContainerRef}
-      header={
-        <div className="px-6 pr-14 pt-6 pb-4 border-b border-slate-100">
-          <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
-            {copy.resultModal.title}
-          </h2>
-          <p className="text-sm text-slate-400">
-            {result.documentName} · {result.category} · {result.totalQuestions} questions
-          </p>
-        </div>
-      }
-      footer={
-        <div className="px-6 pt-4 pb-6 border-t border-slate-100 flex flex-col gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={handleGenerateAnotherClick}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              {copy.resultModal.generateAnotherLabel}
-            </button>
-            <button
-              type="button"
-              onClick={handleViewQuizzes}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              {copy.resultModal.viewQuizzesLabel}
-            </button>
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
-            >
-              {isDownloading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {copy.resultModal.downloadingLabel}
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5" />
-                  {copy.resultModal.downloadLabel}
-                </>
-              )}
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-400 text-center">
-            {downloadMessage || copy.resultModal.downloadPrompt}
-          </p>
-        </div>
-      }
-    >
-      <div className="flex flex-col gap-5 pt-5">
-        <div className="flex flex-col gap-4">
-          {previewQuestions.map((q) => (
-            <div key={q.number} className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-slate-900">
-                {q.number}. {q.text}
-              </p>
-
-              {q.type === "mcq" && q.options && (
-                <div className="grid grid-cols-2 gap-1.5 pl-4">
-                  {q.options.map((opt, i) => (
-                    <p key={i} className="text-xs text-slate-500">
-                      {String.fromCharCode(65 + i)}. {opt}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {q.type === "tf" && (
-                <div className="flex gap-4 pl-4">
-                  <p className="text-xs text-slate-500">A. True</p>
-                  <p className="text-xs text-slate-500">B. False</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            {copy.resultModal.answerKeyLabel}
-          </p>
-          <div className="grid grid-cols-3 gap-x-4 gap-y-1">
-            {previewQuestions.map((q) => (
-              <p key={q.number} className="text-xs text-slate-500">
-                {q.number}. {q.answer}
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -328,18 +128,20 @@ export default function Home() {
     String(copy.quantity.min)
   );
   const [status, setStatus] = useState<GenerateStatus>("idle");
-  const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState(copy.errorDialog.description);
   const [canRetry, setCanRetry] = useState(true);
 
   const handleFile = useCallback((f: File) => {
-    const allowed = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-    if (!allowed.includes(f.type)) {
+    // Some systems report an empty or unexpected MIME type for valid DOCX
+    // files, so fall back to the extension. The server still validates the file.
+    const name = f.name.toLowerCase();
+    const isPdf = f.type === "application/pdf" || name.endsWith(".pdf");
+    const isDocx =
+      f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      name.endsWith(".docx");
+    if (!isPdf && !isDocx) {
       setUploadError(copy.upload.invalidTypeMessage);
       return;
     }
@@ -351,12 +153,12 @@ export default function Home() {
     setFile(f);
   }, []);
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) handleFile(f);
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
     if (f) handleFile(f);
@@ -370,31 +172,15 @@ export default function Home() {
 
   const runGeneration = async (f: File, type: string, qty: number) => {
     setStatus("generating");
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev < 40) return prev + Math.random() * 6;
-        if (prev < 65) return prev + Math.random() * 3;
-        if (prev < 80) return prev + Math.random() * 1.5;
-        if (prev < 90) return prev + Math.random() * 0.6;
-        if (prev < 95) return prev + Math.random() * 0.2;
-        return prev;
-      });
-    }, 120);
-
     try {
       const generated = await generateQuiz(f, type, qty);
-      clearInterval(interval);
-      setProgress(100);
       setStatus("success");
       setTimeout(() => {
-        setProgress(0);
         setStatus("idle");
         setResult(generated);
         setResultModalOpen(true);
       }, 150);
     } catch (err) {
-      clearInterval(interval);
       const { message, canRetry: retryable } = resolveError(err);
       setErrorMessage(message);
       setCanRetry(retryable);
@@ -436,6 +222,14 @@ export default function Home() {
             >
               {!file ? (
                 <div
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
                   onDrop={onDrop}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => fileInputRef.current?.click()}
@@ -576,13 +370,10 @@ export default function Home() {
           {copy.generatingDialog.title}
         </h2>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-linear-to-r from-emerald-500 to-green-600 transition-all duration-150"
-            style={{ width: `${Math.min(progress, 100)}%` }}
-          />
+          <div className="h-full w-1/3 rounded-full bg-linear-to-r from-emerald-500 to-green-600 animate-pulse" />
         </div>
         <p className="text-sm text-slate-400 text-center mt-3">
-          {copy.generatingDialog.progressLabel} {Math.floor(progress)}%
+          {copy.generatingDialog.progressLabel}
         </p>
       </Modal>
 

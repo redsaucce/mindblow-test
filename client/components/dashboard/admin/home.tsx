@@ -38,7 +38,7 @@ const copy = {
   },
   trend: {
     noPreviousData: "No previous data",
-    vsLastMonth: "vs last month",
+    vsLastMonth: "vs before this month",
   },
   emptyState: {
     noData: "No data available",
@@ -127,7 +127,7 @@ function StatCard({
       </div>
       <div className="flex-1">
         <p className="text-3xl font-extrabold text-slate-900 font-heading">
-          {value.toLocaleString()}
+          {value.toLocaleString("en-PH")}
         </p>
         <p className="text-xs text-slate-400 mt-1">
           {value === 0 ? copy.emptyState.noData : description}
@@ -146,6 +146,14 @@ function EmptyChartState() {
       <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
       <p className="text-sm text-slate-500 mt-2">{copy.emptyState.noData}</p>
       <p className="text-xs text-slate-400">{copy.emptyState.hint}</p>
+    </div>
+  );
+}
+
+function LoadingChartState() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-50">
+      <p className="text-sm text-slate-400">Loading...</p>
     </div>
   );
 }
@@ -212,7 +220,9 @@ function QuizzesLineChart() {
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
 
-      {loadState === "error" ? (
+      {loadState === "loading" ? (
+        <LoadingChartState />
+      ) : loadState === "error" ? (
         <div className="flex flex-col items-center justify-center min-h-50">
           <ChartNoAxesColumn className="w-10 h-10 text-slate-300" />
           <p className="text-sm text-slate-500 mt-2">Something went wrong</p>
@@ -249,7 +259,7 @@ function QuizzesLineChart() {
   );
 }
 
-function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
+function QuizTypeDonutChart({ data, isLoading }: { data: DonutChartSlice[]; isLoading: boolean }) {
   const isEmpty = !data || data.length === 0;
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
 
@@ -257,7 +267,9 @@ function QuizTypeDonutChart({ data }: { data: DonutChartSlice[] }) {
     <div className="border border-slate-200 shadow-sm rounded-2xl bg-white p-6 flex flex-col">
       <h3 className="text-base font-semibold text-slate-900 mb-4">{copy.donutChart.title}</h3>
 
-      {isEmpty ? (
+      {isLoading ? (
+        <LoadingChartState />
+      ) : isEmpty ? (
         <EmptyChartState />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
@@ -313,7 +325,7 @@ const EMPTY_STAT: StatData = { current: 0, previous: null };
 export default function Home() {
   // Same ["admin-stats", "day"] key as QuizzesLineChart's default —
   // deduped by React Query into one request on first render.
-  const { data: stats, isError } = useQuery({
+  const { data: stats, isError, isLoading } = useQuery({
     queryKey: ["admin-stats", "day"],
     queryFn: () => getStats("day"),
   });
@@ -367,7 +379,7 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <QuizzesLineChart />
-        <QuizTypeDonutChart data={donutChartData} />
+        <QuizTypeDonutChart data={donutChartData} isLoading={isLoading} />
       </div>
     </div>
   );

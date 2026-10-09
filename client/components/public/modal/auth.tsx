@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   Mail,
   ArrowRight,
   Sparkles,
   Loader2,
   CheckCircle2,
-  AlertTriangle,
   ShieldAlert,
 } from "lucide-react";
 import Modal from "@/components/ui/modal";
@@ -15,7 +14,7 @@ import { useModal } from "@/hooks/use-modal";
 import { useEmailSubmit } from "@/hooks/use-email-submit";
 import { requestMagicLink, ApiError } from "@/services/public/auth-service";
 
-type ModalState = "form" | "loading" | "success" | "warning" | "error" | "rate-limit";
+type ModalState = "form" | "loading" | "success" | "error" | "rate-limit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -47,11 +46,6 @@ const copy = {
       title: "Check your email",
       description: "We sent a magic link to {email}. Click the link to sign in.",
     },
-    warning: {
-      title: "Something went wrong",
-      description:
-        "We couldn't verify your email right now. Please try again in a moment.",
-    },
     error: {
       title: "Request failed",
       description:
@@ -82,7 +76,6 @@ export default function AuthModal() {
 
   const [touched, setTouched] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const {
     email,
@@ -123,7 +116,6 @@ export default function AuthModal() {
     resetEmailState();
     setTouched(false);
     setFocused(false);
-    setAgreedToTerms(false);
   }, [resetEmailState]);
 
   const handleClose = () => {
@@ -131,7 +123,7 @@ export default function AuthModal() {
     closeAuth();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     setTouched(true);
     setFocused(false);
     submitEmail(e);
@@ -153,10 +145,10 @@ export default function AuthModal() {
   const feedbackContent: Record<
     Exclude<ModalState, "form" | "loading">,
     {
-      icon: React.ReactNode;
+      icon: ReactNode;
       bg: string;
       title: string;
-      desc: React.ReactNode;
+      desc: ReactNode;
       retry?: boolean;
       differentEmail?: boolean;
     }
@@ -166,13 +158,6 @@ export default function AuthModal() {
       bg: "bg-emerald-50",
       title: copy.feedback.success.title,
       desc: renderWithEmail(copy.feedback.success.description, email),
-    },
-    warning: {
-      icon: <AlertTriangle className="w-7 h-7 text-amber-500" />,
-      bg: "bg-amber-50",
-      title: copy.feedback.warning.title,
-      desc: copy.feedback.warning.description,
-      retry: true,
     },
     error: {
       icon: <ShieldAlert className="w-7 h-7 text-red-500" />,
@@ -235,6 +220,9 @@ export default function AuthModal() {
                   id="auth-email"
                   type="email"
                   required
+                  disabled={isLoading}
+                  aria-invalid={!!emailError}
+                  aria-describedby="auth-email-help"
                   placeholder={copy.emailField.placeholder}
                   value={email}
                   onFocus={() => setFocused(true)}
@@ -251,6 +239,7 @@ export default function AuthModal() {
                 />
               </div>
               <p
+                id="auth-email-help"
                 className={`mt-1.5 text-[11px] ${
                   emailError ? "text-red-500" : "text-slate-400"
                 }`}
@@ -283,7 +272,11 @@ export default function AuthModal() {
           </form>
         </>
       ) : feedback ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex-1 flex flex-col items-center justify-center text-center"
+        >
           <div
             className={`w-16 h-16 rounded-full ${feedback.bg} flex items-center justify-center mb-5`}
           >

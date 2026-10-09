@@ -25,12 +25,11 @@ interface DataTableProps<T> {
   columns: ColumnDef<T>[];
   /** Pixel width per column, same order as `columns`. */
   columnWidths: number[];
-  onRowClick?: (row: T) => void;
   emptyIcon: LucideIcon;
   emptyTitle: string;
   emptySubtitle?: string;
   emptyAction?: DataTableEmptyAction;
-  /** e.g. "Showing {shown} of {total} entries" */
+  /** e.g. "{shown} entries". The table shows every row, so no total is passed. */
   summaryTemplate: string;
   /** Reset scroll position/recompute height whenever this changes — e.g. a filter/tab value. */
   resetKey?: unknown;
@@ -61,7 +60,6 @@ export default function DataTable<T>({
   data,
   columns,
   columnWidths,
-  onRowClick,
   emptyIcon,
   emptyTitle,
   emptySubtitle,
@@ -159,10 +157,7 @@ export default function DataTable<T>({
               dataRows.map((row) => (
                 <tr
                   key={row.id}
-                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                  className={`h-14 hover:bg-slate-50 transition-colors duration-200 border-t border-slate-100 ${
-                    onRowClick ? "cursor-pointer" : ""
-                  }`}
+                  className="h-14 hover:bg-slate-50 transition-colors duration-200 border-t border-slate-100"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4">

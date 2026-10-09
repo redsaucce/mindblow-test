@@ -54,6 +54,7 @@ export default function ScrollBar({ containerRef }: ScrollBarProps = {}) {
         scrollPos,
         maxScroll,
         viewportHeight,
+        // Only show the thumb when there is more than ~32px to scroll.
         scrollable: maxScroll > 32,
       });
       setScrolling(true);
@@ -104,8 +105,8 @@ export default function ScrollBar({ containerRef }: ScrollBarProps = {}) {
   if (!metrics.scrollable) return null;
 
   const wrapperClassName = containerRef
-    ? "absolute inset-y-0 right-[2px] z-20 transition-opacity duration-300 pointer-events-none"
-    : "fixed inset-y-0 right-[2px] z-[70] hidden md:block transition-opacity duration-300 pointer-events-none";
+    ? "absolute inset-y-0 right-0.5 z-20 transition-opacity duration-300 pointer-events-none"
+    : "fixed inset-y-0 right-0.5 z-70 hidden md:block transition-opacity duration-300 pointer-events-none";
 
   return (
     <div

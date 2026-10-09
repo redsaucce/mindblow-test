@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileX, Download, Loader2, ScrollText } from "lucide-react";
@@ -17,12 +17,12 @@ import {
   getQuizDetail,
 } from "@/services/dashboard/user-quiz-list-service";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
+import { triggerBrowserDownload } from "@/services/browser-download";
 
 const copy = {
   selectAllLabel: "Select all",
   downloadLabel: "Download",
   deleteLabel: "Delete",
-  deleteAllLabel: "Delete",
   deleteDialog: {
     singleTitle: "Delete quiz?",
     singleDescription:
@@ -54,27 +54,22 @@ const copy = {
     downloadStartedManyTemplate: "{count} quizzes downloading",
     downloadError: "Download failed. Please try again.",
   },
+  loadingQuizzes: "Loading your quizzes...",
   previewModal: {
     downloadLabel: "Download Quiz",
+    generateQuizLabel: "Generate Quiz",
+    answerKeyLabel: "Answer key",
+    loadingQuestions: "Loading questions...",
+    previewErrorTitle: "Couldn't load this quiz",
+    previewErrorSubtitle: "Please try again.",
   },
 };
 
-type DeleteTarget = { type: "single"; id: string } | { type: "bulk" } | null;
+type DeleteTarget = { type: "bulk" } | null;
 type DownloadTarget = { ids: string[] } | null;
 
 async function deleteQuizzes(ids: string[]) {
   await Promise.all(ids.map((id) => deleteQuizRequest(id)));
-}
-
-function triggerBrowserDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
 function interpolate(template: string, count: number) {
@@ -106,6 +101,14 @@ export default function QuizList() {
   const { containerRef: autoHeightRef, maxHeight } = useAutoScrollHeight({
     recomputeKey: loadState,
   });
+
+  const setScrollRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      scrollContainerRef.current = el;
+      autoHeightRef.current = el;
+    },
+    [autoHeightRef]
+  );
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
@@ -196,9 +199,6 @@ export default function QuizList() {
   const deleteMutation = useMutation({
     mutationFn: (ids: string[]) => deleteQuizzes(ids),
     onSuccess: (_data, ids) => {
-      // Re-fetches the quiz list rather than patching it locally, so
-      // counts/pagination stay correct after a delete.
-      queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
       setSelected((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
@@ -215,24 +215,27 @@ export default function QuizList() {
       setDeleteTarget(null);
       showFeedback(copy.feedback.deleteError);
     },
+    onSettled: () => {
+      // Re-fetch on success and on partial failure, so the list never
+      // shows quizzes that were already deleted.
+      queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+    },
   });
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
-    const ids = deleteTarget.type === "single" ? [deleteTarget.id] : Array.from(selected);
+    const ids = Array.from(selected);
     deleteMutation.mutate(ids);
   };
 
   const dialogTitle = () => {
     if (!deleteTarget) return "";
-    if (deleteTarget.type === "single") return copy.deleteDialog.singleTitle;
     if (allChecked) return copy.deleteDialog.allTitle;
     return interpolate(copy.deleteDialog.someTitleTemplate, selected.size);
   };
 
   const dialogDescription = () => {
     if (!deleteTarget) return "";
-    if (deleteTarget.type === "single") return copy.deleteDialog.singleDescription;
     if (allChecked)
       return interpolate(copy.deleteDialog.allDescriptionTemplate, quizzes.length);
     return copy.deleteDialog.someDescription;
@@ -270,7 +273,7 @@ export default function QuizList() {
               disabled={selected.size === 0}
               className="rounded-full px-3 py-1 text-xs sm:px-6 sm:py-1.5 sm:text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
             >
-              {selected.size > 0 ? `${copy.deleteLabel} (${selected.size})` : copy.deleteAllLabel}
+              {selected.size > 0 ? `${copy.deleteLabel} (${selected.size})` : copy.deleteLabel}
             </button>
           </div>
         </div>
@@ -286,7 +289,7 @@ export default function QuizList() {
             <EmptyState
               icon={ScrollText}
               title={emptyStates.quizList.title}
-              subtitle="Loading your quizzes..."
+              subtitle={copy.loadingQuizzes}
             />
           </div>
         ) : loadState === "error" ? (
@@ -312,16 +315,17 @@ export default function QuizList() {
         ) : (
           <div className="relative">
             <div
-              ref={(el) => {
-                scrollContainerRef.current = el;
-                autoHeightRef.current = el;
-              }}
+              ref={setScrollRef}
               className="no-scrollbar overflow-y-auto"
               style={{ maxHeight: maxHeight ?? undefined }}
             >
               {quizzes.map((quiz) => (
                 <div
                   key={quiz.id}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.target === e.currentTarget) openPreview(quiz);
+                  }}
                   onClick={() => openPreview(quiz)}
                   className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors duration-200 last:border-b-0"
                 >
@@ -437,7 +441,7 @@ export default function QuizList() {
                   className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   <ScrollText className="w-3.5 h-3.5" />
-                  Generate Quiz
+                  {copy.previewModal.generateQuizLabel}
                 </button>
                 <button
                   type="button"
@@ -461,7 +465,7 @@ export default function QuizList() {
             {previewLoading && (
               <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <p className="text-sm">Loading questions...</p>
+                <p className="text-sm">{copy.previewModal.loadingQuestions}</p>
               </div>
             )}
 
@@ -469,8 +473,8 @@ export default function QuizList() {
               <div className="py-16 flex flex-col items-center justify-center">
                 <EmptyState
                   icon={FileX}
-                  title="Couldn't load this quiz"
-                  subtitle="Please try again."
+                  title={copy.previewModal.previewErrorTitle}
+                  subtitle={copy.previewModal.previewErrorSubtitle}
                 />
               </div>
             )}
@@ -506,7 +510,7 @@ export default function QuizList() {
 
                 <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-2">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    Answer key
+                    {copy.previewModal.answerKeyLabel}
                   </p>
                   <div className="grid grid-cols-3 gap-x-4 gap-y-1">
                     {previewDetail.questions.map((q) => (
