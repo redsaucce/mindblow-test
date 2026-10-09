@@ -135,22 +135,3 @@ def render_magic_link_email(*, link: str, expire_minutes: int) -> str:
         preheader=f"Your MindBlow sign-in link is ready — it expires in {expire_minutes} minutes.",
         body_html=body,
     )
-
-
-def render_announcement_email(*, subject: str, message_html: str) -> str:
-    """Branded general-purpose announcement email."""
-    body = f"""
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="font-family:'Plus Jakarta Sans', Helvetica, Arial, sans-serif; font-size:22px; font-weight:700; color:#111827; text-align:center; padding-top:8px; padding-bottom:16px;">
-          {subject}
-        </td>
-      </tr>
-      <tr>
-        <td style="font-size:15px; line-height:1.6; color:#4b5563; text-align:center; padding-bottom:16px;">
-          {message_html}
-        </td>
-      </tr>
-    </table>
-    """
-    return _base_layout(preheader=subject, body_html=body)
