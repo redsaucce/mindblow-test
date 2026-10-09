@@ -141,12 +141,12 @@ export default function Error({
   const ActionIcon = action === "retry" ? RefreshCw : ArrowRight;
 
   return (
-    <main className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 min-h-screen flex items-center justify-center px-6">
-      <div className="absolute top-1/4 left-1/4 w-[420px] h-[420px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[360px] h-[360px] rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
+    <main className="relative overflow-hidden bg-linear-to-br from-white via-emerald-50/70 to-slate-50 min-h-screen flex items-center justify-center px-6">
+      <div className="absolute top-1/4 left-1/4 w-105 h-105 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-90 h-90 rounded-full bg-green-500/12 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-md mx-auto text-center">
-        <div className="mx-auto mb-6 w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+        <div className="mx-auto mb-6 w-16 h-16 rounded-3xl bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
           <Icon className="w-7 h-7 text-white" strokeWidth={2.2} />
         </div>
 
@@ -167,7 +167,7 @@ export default function Error({
         <button
           type="button"
           onClick={handleAction}
-          className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200 hover:-translate-y-0.5"
+          className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200 hover:-translate-y-0.5"
         >
           {actionLabel}
           <ActionIcon className="w-4 h-4" />

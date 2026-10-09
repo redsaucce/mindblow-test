@@ -114,7 +114,7 @@ export default function ScrollBar({ containerRef }: ScrollBarProps = {}) {
     >
       <div className="relative h-full w-2 overflow-visible">
         <div
-          className="absolute right-0 w-2 rounded-l-full bg-gradient-to-b from-emerald-500 to-green-700 shadow-[0_0_0_1px_rgba(255,255,255,0.14)]"
+          className="absolute right-0 w-2 rounded-l-full bg-linear-to-b from-emerald-500 to-green-700 shadow-[0_0_0_1px_rgba(255,255,255,0.14)]"
           style={{
             top: thumbTop,
             height: thumbHeight,
