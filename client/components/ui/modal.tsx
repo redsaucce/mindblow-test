@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { X } from "lucide-react";
 import ScrollBar from "@/components/ui/scroll-bar";
 
@@ -32,6 +32,15 @@ interface ModalProps {
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => !el.hasAttribute("inert") && el.offsetParent !== null
+  );
+}
+
 export default function Modal({
   open,
   onClose,
@@ -57,6 +66,54 @@ export default function Modal({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Focus management: move focus into the dialog on open, keep Tab inside it,
+  // and return focus to the element that opened it on close.
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    const focusables = panel ? getFocusable(panel) : [];
+    (focusables[0] ?? panel)?.focus();
+    return () => {
+      opener?.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusables = getFocusable(panelRef.current);
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !panelRef.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !panelRef.current.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onTab);
+    return () => document.removeEventListener("keydown", onTab);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -66,6 +123,10 @@ export default function Modal({
         onClick={onClose}
       />
       <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
         className={`relative w-full ${maxWidthClassName} max-h-[85vh] flex flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ${panelClassName}`}
       >
         {showCloseButton ? (
@@ -82,9 +143,7 @@ export default function Modal({
         ) : null}
         <div
           ref={scrollContainerRef}
-          className={`overflow-y-auto flex-1 ${
-            scrollContainerRef ? "scrollbar-none" : ""
-          } ${contentClassName}`}
+          className={`overflow-y-auto flex-1 ${contentClassName}`}
           style={
             scrollContainerRef
               ? { scrollbarWidth: "none", msOverflowStyle: "none" }
