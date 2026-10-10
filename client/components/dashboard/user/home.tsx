@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, type ChangeEvent, type DragEvent } from "react";
+import { useState, useRef, useCallback, useEffect, type ChangeEvent, type DragEvent } from "react";
 import { Upload, Wand2 } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import {
