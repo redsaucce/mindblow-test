@@ -1,4 +1,4 @@
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     database_url: str
 
     # JWT / session cookie
-    jwt_secret: str
+    jwt_secret: str = Field(min_length=32)
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 30  # short-lived access token; session length is governed by refresh_token_expire_days below
 
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     gemini_api_key: str
 
     # CORS / frontend
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str  # required: no default, so production never falls back to localhost
 
     @computed_field
     @property

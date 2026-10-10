@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -105,6 +105,7 @@ async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, st
 
     access_token = create_access_token(user_id=str(user.id), role=user.role)
     refresh_token_value = await _issue_refresh_token(db, str(user.id))
+    await purge_expired_tokens(db)
 
     await db.commit()
 
@@ -124,6 +125,22 @@ async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, st
         )
 
     return access_token, refresh_token_value, user.role
+
+
+async def purge_expired_tokens(db: AsyncSession) -> None:
+    """Deletes rows that can no longer be used. Runs at sign-in, so no scheduler is needed.
+
+    A revoked refresh token is kept for the reuse check, so it's removed only once
+    it's older than the refresh window. Revoked tokens are removed after they expire.
+    """
+    now = datetime.now(timezone.utc)
+    refresh_cutoff = now - timedelta(days=settings.refresh_token_expire_days)
+    await db.execute(delete(RevokedToken).where(RevokedToken.expires_at < now))
+    await db.execute(
+        delete(RefreshToken).where(
+            func.coalesce(RefreshToken.revoked_at, RefreshToken.last_used_at) < refresh_cutoff
+        )
+    )
 
 
 async def _issue_refresh_token(db: AsyncSession, user_id: str) -> str:

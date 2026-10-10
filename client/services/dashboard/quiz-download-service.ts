@@ -1,4 +1,4 @@
-import { ApiError, tryRefresh } from "@/services/api-client";
+import { API_URL, ApiError, readErrorDetail, tryRefresh } from "@/services/api-client";
 
 export interface DownloadResult {
   blob: Blob;
@@ -14,7 +14,7 @@ function extractFilename(contentDisposition: string | null, fallback: string): s
 
 async function fetchDownload(ids: string[]): Promise<Response> {
   const query = ids.map(encodeURIComponent).join(",");
-  return fetch(`/api/quizzes/download?ids=${query}`, {
+  return fetch(`${API_URL}/quizzes/download?ids=${query}`, {
     credentials: "include",
   });
 }
@@ -30,13 +30,7 @@ export async function downloadQuizzes(ids: string[], isRetry = false): Promise<D
   }
 
   if (!response.ok) {
-    let detail = "Download failed. Please try again.";
-    try {
-      const body = await response.json();
-      if (body?.detail) detail = body.detail;
-    } catch {
-      // response body wasn't JSON
-    }
+    const detail = await readErrorDetail(response, "Download failed. Please try again.");
     throw new ApiError(response.status, detail);
   }
 
@@ -47,7 +41,10 @@ export async function downloadQuizzes(ids: string[], isRetry = false): Promise<D
   );
 
   const failedTitlesHeader = response.headers.get("X-Failed-Titles");
-  const failedTitles = failedTitlesHeader ? failedTitlesHeader.split(",") : [];
+  // The backend URL-encodes each title, so decode them before showing them.
+  const failedTitles = failedTitlesHeader
+    ? failedTitlesHeader.split(",").map((title) => decodeURIComponent(title))
+    : [];
 
   return { blob, filename, failedTitles };
 }

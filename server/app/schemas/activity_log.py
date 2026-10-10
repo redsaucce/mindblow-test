@@ -1,16 +1,7 @@
 from datetime import datetime
-from typing import Literal
-
 from pydantic import BaseModel
 
-ActivityType = Literal[
-    "registered",
-    "signed_in",
-    "generated",
-    "downloaded",
-    "quiz_deleted",
-    "user_deleted",
-]
+from app.models.activity_log import ActivityType
 
 
 class ActivityLogEntry(BaseModel):

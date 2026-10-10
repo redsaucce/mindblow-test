@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/api-client";
+import { formatDate } from "@/services/format-date";
 
 export interface AdminUser {
   id: string;
@@ -23,15 +24,6 @@ interface AdminUserListResponse {
 
 interface DeleteUserResponse {
   message: string;
-}
-
-function formatDate(isoDatetime: string): string {
-  return new Date(isoDatetime).toLocaleDateString("en-US", {
-    timeZone: "Asia/Manila",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function toAdminUser(response: AdminUserResponse): AdminUser {

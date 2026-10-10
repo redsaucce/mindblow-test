@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, verify_csrf
 from app.core.exceptions import QuizNotFoundError
+from app.models.activity_log import ActivityType
 from app.models.user_data import User
 from app.schemas.quiz import DeleteQuizResponse, QuizListResponse, QuizResponse, QuizType
+from app.services.activity_log_service import log_action
 from app.services.document_export_service import export_quiz, export_quizzes_zip
 from app.services.quiz_service import (
     delete_quiz,
@@ -95,6 +97,12 @@ async def download_quizzes(
     if len(quiz_ids) == 1:
         quiz, questions = await get_quiz_with_questions(db, str(user.id), quiz_ids[0])
         docx_bytes = export_quiz(quiz, questions)
+        await log_action(
+            db,
+            email=user.email,
+            description=f'Downloaded quiz "{quiz.title}"',
+            type=ActivityType.DOWNLOADED,
+        )
         return StreamingResponse(
             iter([docx_bytes]),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -122,6 +130,12 @@ async def download_quizzes(
 
     zip_bytes, export_failed_titles = export_quizzes_zip(quizzes_with_questions)
     failed_titles.extend(export_failed_titles)
+    await log_action(
+        db,
+        email=user.email,
+        description=f"Downloaded {len(quizzes_with_questions)} quizzes",
+        type=ActivityType.DOWNLOADED,
+    )
 
     headers = {"Content-Disposition": 'attachment; filename="quizzes.zip"'}
     if failed_titles:

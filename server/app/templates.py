@@ -7,6 +7,8 @@ and JS. See inline comments for client-specific fallbacks (Outlook VML,
 font fallback stack, etc).
 """
 
+from datetime import datetime
+
 
 def _base_layout(*, preheader: str, body_html: str) -> str:
     """Wraps content in the shared MindBlow header/footer shell."""
@@ -69,7 +71,7 @@ def _base_layout(*, preheader: str, body_html: str) -> str:
                 <tr>
                   <td style="font-size:12px; line-height:1.6; color:#9ca3af;">
                     If you didn't request this, you can safely ignore this email.<br />
-                    &copy; 2026 MindBlow &mdash; AI-powered quiz generation.
+                    &copy; {datetime.now().year} MindBlow &mdash; AI-powered quiz generation.
                   </td>
                 </tr>
               </table>

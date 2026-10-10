@@ -1,4 +1,4 @@
-const API_URL = "/api";
+export const API_URL = "/api";
 
 function getCsrfToken(): string | null {
   const match = document.cookie.match(/(?:^|; )mb_csrf=([^;]*)/);
@@ -14,6 +14,22 @@ export class ApiError extends Error {
     this.status = status;
     this.detail = detail;
   }
+}
+
+/** Reads a readable error message from a failed response. FastAPI validation errors arrive as a list. */
+export async function readErrorDetail(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json();
+    if (Array.isArray(body?.detail)) {
+      return body.detail
+        .map((d: { msg?: string }) => d.msg ?? "Please check your input.")
+        .join(" ");
+    }
+    if (body?.detail) return body.detail;
+  } catch {
+    // response body wasn't JSON — use the fallback
+  }
+  return fallback;
 }
 
 let refreshPromise: Promise<boolean> | null = null;
@@ -66,19 +82,7 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    let detail = "Something went wrong. Please try again.";
-    try {
-      const body = await response.json();
-      if (Array.isArray(body?.detail)) {
-        detail = body.detail
-          .map((d: { msg?: string }) => d.msg ?? "Please check your input.")
-          .join(" ");
-      } else if (body?.detail) {
-        detail = body.detail;
-      }
-    } catch {
-      // response body wasn't JSON — keep the generic message
-    }
+    const detail = await readErrorDetail(response, "Something went wrong. Please try again.");
     throw new ApiError(response.status, detail);
   }
 

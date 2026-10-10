@@ -1,4 +1,5 @@
 import { apiClient, ApiError } from "@/services/api-client";
+import { formatDate } from "@/services/format-date";
 
 export interface Quiz {
   id: string;
@@ -54,15 +55,6 @@ const SERVER_TYPE_TO_LOCAL: Record<QuizResponse["quizType"], QuizQuestionDetail[
   identification: "identification",
 };
 
-function formatDate(isoDatetime: string): string {
-  return new Date(isoDatetime).toLocaleDateString("en-US", {
-    timeZone: "Asia/Manila",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function toQuiz(response: QuizResponse): Quiz {
   return {
     id: response.id,
@@ -76,11 +68,6 @@ function toQuiz(response: QuizResponse): Quiz {
 export async function listQuizzes(): Promise<Quiz[]> {
   const { quizzes } = await apiClient.get<QuizListResponse>("/quizzes");
   return quizzes.map(toQuiz);
-}
-
-export async function getQuiz(id: string): Promise<Quiz> {
-  const response = await apiClient.get<QuizResponse>(`/quizzes/${encodeURIComponent(id)}`);
-  return toQuiz(response);
 }
 
 export async function getQuizDetail(id: string): Promise<QuizDetail> {
