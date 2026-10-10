@@ -128,6 +128,20 @@ export default function Home() {
     String(copy.quantity.min)
   );
   const [status, setStatus] = useState<GenerateStatus>("idle");
+  // Progress shown while the request runs. It's an estimate, not real progress:
+  // it rises quickly at first and slows down near the end, and stays below 95%
+  // until the server responds. The bar jumps to 100% when the quiz is ready.
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (status !== "generating") return;
+    const start = Date.now();
+    setProgress(0);
+    const id = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      setProgress(Math.min(95, 95 * (1 - Math.exp(-elapsed / 8))));
+    }, 100);
+    return () => clearInterval(id);
+  }, [status]);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState(copy.errorDialog.description);
@@ -174,6 +188,7 @@ export default function Home() {
     setStatus("generating");
     try {
       const generated = await generateQuiz(f, type, qty);
+      setProgress(100);
       setStatus("success");
       setTimeout(() => {
         setStatus("idle");
@@ -370,10 +385,13 @@ export default function Home() {
           {copy.generatingDialog.title}
         </h2>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full w-1/3 rounded-full bg-linear-to-r from-emerald-500 to-green-600 animate-pulse" />
+          <div
+            className="h-full rounded-full bg-linear-to-r from-emerald-500 to-green-600 transition-[width] duration-100 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
         </div>
         <p className="text-sm text-slate-400 text-center mt-3">
-          {copy.generatingDialog.progressLabel}
+          {copy.generatingDialog.progressLabel} {Math.round(progress)}%
         </p>
       </Modal>
 
