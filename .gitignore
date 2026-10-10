@@ -10,3 +10,7 @@ server/*.pyc
 server/**/*.pyc
 server/venv
 server/.env
+
+# Editor settings and stray root dependencies
+.vscode/
+node_modules/
