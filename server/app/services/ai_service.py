@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 
 import nh3
@@ -22,6 +23,15 @@ class GeneratedQuiz:
         self.title = title
         self.direction = direction
         self.questions = questions
+
+
+def _strip_code_fences(text: str) -> str:
+    """Removes a Markdown code fence (```json ... ```) the model sometimes wraps around its JSON."""
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    return cleaned.strip()
 
 
 def _assemble_prompt(
@@ -71,6 +81,9 @@ async def generate_quiz(
         )
         elapsed = time.monotonic() - start
         raw_text = response.text
+        finish_reason = response.candidates[0].finish_reason if response.candidates else None
+        usage = getattr(response, "usage_metadata", None)
+        output_tokens = getattr(usage, "candidates_token_count", None)
         logger.info("Gemini call succeeded in %.1fs", elapsed)
     except Exception as e:
         elapsed = time.monotonic() - start
@@ -78,9 +91,16 @@ async def generate_quiz(
         raise AIGenerationFailedError() from e
 
     try:
-        parsed = json.loads(raw_text)
+        parsed = json.loads(_strip_code_fences(raw_text))
     except (json.JSONDecodeError, TypeError) as e:
-        logger.error("Gemini response was not valid JSON (%s)", type(e).__name__)
+        # Log why the response ended and its size, never its content (it comes from the user's document).
+        logger.error(
+            "Gemini response was not valid JSON (%s); finish_reason=%s, output_tokens=%s, characters=%s",
+            type(e).__name__,
+            finish_reason,
+            output_tokens,
+            len(raw_text or ""),
+        )
         raise AIGenerationFailedError("The AI returned a malformed response. Please try again.") from e
 
     try:
