@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, ShieldAlert, type LucideIcon } from "lucide-react";
 import { verifyToken, ApiError } from "@/services/public/auth-service";
@@ -11,22 +11,24 @@ function VerifyContent() {
   const searchParams = useSearchParams();
   const [state, setState] = useState<VerifyState>("verifying");
   const [errorMessage, setErrorMessage] = useState("");
+  // Strict Mode runs effects twice in development. The link can only be used once,
+  // so send the request once. The result is applied even if the effect re-runs.
+  const requested = useRef(false);
   useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
     const token = searchParams.get("token");
     if (!token) {
       setState("error");
       setErrorMessage("This link is missing a token. Please request a new one.");
       return;
     }
-    let cancelled = false;
     verifyToken(token)
       .then(({ role }) => {
-        if (cancelled) return;
         setState("success");
         router.replace(role === "admin" ? "/admin" : "/user");
       })
       .catch((err) => {
-        if (cancelled) return;
         setState("error");
         setErrorMessage(
           err instanceof ApiError
@@ -34,9 +36,6 @@ function VerifyContent() {
             : "Something went wrong verifying your link."
         );
       });
-    return () => {
-      cancelled = true;
-    };
   }, [searchParams, router]);
   const config: { icon: LucideIcon; spin?: boolean; title: string; message: string } =
     state === "verifying"

@@ -28,9 +28,15 @@ def _check_rate_limits(user_id: str) -> None:
     while _app_wide_timestamps and _app_wide_timestamps[0] < window_start:
         _app_wide_timestamps.popleft()
 
+    # Drop users whose recent generations have all expired, so the store doesn't grow forever.
+    for uid in list(_per_user_timestamps):
+        queue = _per_user_timestamps[uid]
+        while queue and queue[0] < window_start:
+            queue.popleft()
+        if not queue:
+            del _per_user_timestamps[uid]
+
     user_queue = _per_user_timestamps.setdefault(user_id, deque())
-    while user_queue and user_queue[0] < window_start:
-        user_queue.popleft()
 
     if len(_app_wide_timestamps) >= APP_WIDE_LIMIT_PER_MINUTE:
         raise GenerationRateLimitedError()
@@ -94,12 +100,13 @@ async def generate_quiz(
     quiz_type: QuizType,
     question_count: int,
 ) -> Quiz:
-    _check_rate_limits(user_id)
-
     raw_text = await document_service.extract_text(file)
     cleaned_text = document_service.clean_extracted_text(raw_text)
 
-    # Semantic deduplication (see rag-implementation-plan.md): chunk the
+    # Checked after the upload is read, so an invalid file doesn't use up a slot.
+    _check_rate_limits(user_id)
+
+    # Semantic deduplication: chunk the
     # cleaned text, embed each chunk, and collapse near-duplicates before
     # the full text is handed to the main generation prompt. This only
     # removes genuine repetition (restated/paraphrased content) — nothing

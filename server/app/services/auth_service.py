@@ -73,7 +73,9 @@ async def request_magic_link(db: AsyncSession, email: str) -> None:
 async def verify_magic_link(db: AsyncSession, token_value: str) -> tuple[str, str, str]:
     """Returns (access_token, refresh_token, role) on success."""
     result = await db.execute(
-        select(MagicLinkToken).where(MagicLinkToken.token_hash == hash_token(token_value))
+        select(MagicLinkToken)
+        .where(MagicLinkToken.token_hash == hash_token(token_value))
+        .with_for_update()
     )
     token = result.scalar_one_or_none()
 

@@ -23,6 +23,4 @@ class QuizQuestion(Base):
     question_text: Mapped[str] = mapped_column(String, nullable=False)
     options: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     correct_answer: Mapped[str] = mapped_column(String, nullable=False)
-    # Renamed from `order` — a reserved SQL keyword that risked breaking any
-    # raw SQL written against this table without careful quoting.
     question_order: Mapped[int] = mapped_column(Integer, nullable=False)

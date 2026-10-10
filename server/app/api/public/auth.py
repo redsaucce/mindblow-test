@@ -1,11 +1,13 @@
 import logging
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, verify_csrf
 from app.config import settings
-from app.core.exceptions import RateLimitedError
+from app.core.exceptions import ExpiredTokenError, InvalidTokenError, NotAuthenticatedError, RateLimitedError
 from app.core.security import (
     clear_csrf_cookie,
     clear_refresh_cookie,
@@ -72,10 +74,18 @@ async def refresh(request: Request, response: Response, db: AsyncSession = Depen
     refresh_token_value = request.cookies.get(settings.refresh_cookie_name)
     if refresh_token_value is None:
         clear_session_cookie(response)
-        from app.core.exceptions import NotAuthenticatedError
         raise NotAuthenticatedError()
 
-    access_token, new_refresh_token, role = await refresh_session(db, refresh_token_value)
+    try:
+        access_token, new_refresh_token, role = await refresh_session(db, refresh_token_value)
+    except (InvalidTokenError, ExpiredTokenError) as exc:
+        # An error response doesn't carry the cookies set on `response`, so build
+        # the error response here and clear the cookies on it.
+        failed = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        clear_session_cookie(failed)
+        clear_refresh_cookie(failed)
+        clear_csrf_cookie(failed)
+        return failed
     set_session_cookie(response, access_token)
     set_refresh_cookie(response, new_refresh_token)
     set_csrf_cookie(response, generate_csrf_token())
@@ -94,7 +104,6 @@ async def logout(request: Request, response: Response, db: AsyncSession = Depend
             jti = payload.get("jti")
             exp = payload.get("exp")
             if jti is not None and exp is not None:
-                from datetime import datetime, timezone
                 await revoke_access_token(db, jti, datetime.fromtimestamp(exp, tz=timezone.utc))
         except ValueError:
             pass  # already invalid/expired — nothing to revoke

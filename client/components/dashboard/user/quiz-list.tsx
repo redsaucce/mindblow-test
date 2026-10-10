@@ -17,6 +17,7 @@ import {
   getQuizDetail,
 } from "@/services/dashboard/user-quiz-list-service";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
+import { ApiError } from "@/services/api-client";
 import { triggerBrowserDownload } from "@/services/browser-download";
 
 const copy = {
@@ -53,6 +54,7 @@ const copy = {
     downloadStartedSingle: "Download started",
     downloadStartedManyTemplate: "{count} quizzes downloading",
     downloadError: "Download failed. Please try again.",
+    selectLimitTemplate: "You can select up to {count} quizzes at a time.",
   },
   loadingQuizzes: "Loading your quizzes...",
   previewModal: {
@@ -75,6 +77,9 @@ async function deleteQuizzes(ids: string[]) {
 function interpolate(template: string, count: number) {
   return template.replace("{count}", String(count));
 }
+
+// Must match MAX_DOWNLOAD_QUIZZES in the backend (api/dashboard/user/quizzes.py).
+const MAX_DOWNLOAD = 50;
 
 export default function QuizList() {
   const router = useRouter();
@@ -133,10 +138,21 @@ export default function QuizList() {
   const someChecked = selected.size > 0 && selected.size < quizzes.length;
 
   const toggleAll = () => {
-    setSelected(allChecked ? new Set() : new Set(quizzes.map((q) => q.id)));
+    if (allChecked) {
+      setSelected(new Set());
+      return;
+    }
+    if (quizzes.length > MAX_DOWNLOAD) {
+      showFeedback(interpolate(copy.feedback.selectLimitTemplate, MAX_DOWNLOAD));
+    }
+    setSelected(new Set(quizzes.slice(0, MAX_DOWNLOAD).map((q) => q.id)));
   };
 
   const toggleOne = (id: string) => {
+    if (!selected.has(id) && selected.size >= MAX_DOWNLOAD) {
+      showFeedback(interpolate(copy.feedback.selectLimitTemplate, MAX_DOWNLOAD));
+      return;
+    }
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -188,9 +204,9 @@ export default function QuizList() {
             : interpolate(copy.feedback.downloadStartedManyTemplate, count)
         );
       }
-    } catch {
+    } catch (err) {
       setDownloadTarget(null);
-      showFeedback(copy.feedback.downloadError);
+      showFeedback(err instanceof ApiError ? err.detail : copy.feedback.downloadError);
     } finally {
       setIsDownloading(false);
     }

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, String, Integer, DateTime, ForeignKey
+from sqlalchemy import CheckConstraint, Index, String, Integer, DateTime, ForeignKey
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,6 +20,7 @@ class Quiz(Base):
     __tablename__ = "quizzes"
     __table_args__ = (
         CheckConstraint("question_count > 0", name="ck_quizzes_question_count_positive"),
+        Index("ix_quizzes_user_id_created_at", "user_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
