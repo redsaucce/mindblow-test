@@ -12,7 +12,7 @@ export const privacy: LegalContentItem = {
     },
     {
       q: "How do we store your data?",
-      a: "All data is encrypted at rest and in transit using industry-standard protocols. We use secure cloud infrastructure and regularly audit our systems for vulnerabilities.",
+      a: "All data is encrypted at rest and in transit using industry-standard protocols. We use secure cloud infrastructure and regularly audit our systems for vulnerabilities. Uploaded documents are not saved to our database or disk. They are processed in memory and discarded once your quiz is created.",
     },
     {
       q: "Third-party services",
