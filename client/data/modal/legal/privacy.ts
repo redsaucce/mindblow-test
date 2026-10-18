@@ -16,7 +16,7 @@ export const privacy: LegalContentItem = {
     },
     {
       q: "Third-party services",
-      a: "We use trusted third-party services: Google Gemini to generate quizzes from the documents you upload, and Resend to send sign-in emails.",
+      a: "We use trusted third-party services: Google Gemini to generate quizzes from the documents you upload, and Resend to send sign-in emails. The text of an uploaded document is sent to Google Gemini only to create your quiz. We don't keep the document after the quiz is created. Google processes that text under its own terms.",
     },
     {
       q: "Your rights",
