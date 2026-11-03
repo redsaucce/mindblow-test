@@ -91,3 +91,11 @@ class GenerationRateLimitedError(HTTPException):
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="You're generating quizzes too quickly. Please wait a moment and try again.",
         )
+
+
+class DocumentWithoutTextError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This document has no readable text. It may contain only images, and images can't be read. Please upload a document that contains text.",
+        )

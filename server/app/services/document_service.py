@@ -9,6 +9,7 @@ from lxml import etree
 
 from app.config import settings
 from app.core.exceptions import (
+    DocumentWithoutTextError,
     DocumentTooLongError,
     DocumentTooShortError,
     FileTooLargeError,
@@ -46,15 +47,23 @@ async def _read_bounded(file: UploadFile) -> bytes:
     return b"".join(chunks)
 
 
+def _ensure_has_text(text: str) -> str:
+    """Images are not read, so a file with no text at all (only images) is rejected with its own message.
+    Files that have some text, plus images, pass through and are processed normally."""
+    if not text.strip():
+        raise DocumentWithoutTextError()
+    return text
+
+
 async def extract_text(file: UploadFile) -> str:
     raw_bytes = await _read_bounded(file)
     filename = (file.filename or "").lower()
 
     if filename.endswith(".pdf") or file.content_type == PDF_CONTENT_TYPE:
-        return _extract_pdf(raw_bytes)
+        return _ensure_has_text(_extract_pdf(raw_bytes))
 
     if filename.endswith(".docx") or file.content_type == DOCX_CONTENT_TYPE:
-        return _extract_docx(raw_bytes)
+        return _ensure_has_text(_extract_docx(raw_bytes))
 
     if filename.endswith(".doc"):
         raise UnsupportedFileTypeError(
