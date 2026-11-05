@@ -7,6 +7,18 @@ QuizType = Literal["multiple_choice", "identification", "true_false"]
 
 
 class QuestionResponse(BaseModel):
+    """A generated question, including its answer. Used only while generating."""
+
+    number: int
+    text: str
+    type: QuizType
+    options: list[str] | None = None
+    answer: str
+
+
+class QuestionPublic(BaseModel):
+    """A question shown to the user, with its answer key so the browser can grade it."""
+
     number: int
     text: str
     type: QuizType
@@ -21,7 +33,7 @@ class QuizResponse(BaseModel):
     quizType: QuizType
     createdAt: datetime
     direction: str | None = None
-    questions: list[QuestionResponse] | None = None
+    questions: list[QuestionPublic] | None = None
 
 
 class QuizListResponse(BaseModel):

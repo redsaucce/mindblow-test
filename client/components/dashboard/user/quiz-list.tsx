@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileX, Download, Loader2, ScrollText } from "lucide-react";
-import Modal from "@/components/ui/modal";
+import { QuizResultModal, type QuizResult } from "@/components/dashboard/user/quiz-result-modal";
 import AlertModal from "@/components/ui/alert-modal";
 import ScrollBar from "@/components/ui/scroll-bar";
 import EmptyState from "@/components/ui/empty-state";
@@ -57,14 +57,7 @@ const copy = {
     selectLimitTemplate: "You can select up to {count} quizzes at a time.",
   },
   loadingQuizzes: "Loading your quizzes...",
-  previewModal: {
-    downloadLabel: "Download Quiz",
-    generateQuizLabel: "Generate Quiz",
-    answerKeyLabel: "Answer key",
-    loadingQuestions: "Loading questions...",
-    previewErrorTitle: "Couldn't load this quiz",
-    previewErrorSubtitle: "Please try again.",
-  },
+  takeQuizLabel: "Take quiz",
 };
 
 type DeleteTarget = { type: "bulk" } | null;
@@ -85,7 +78,6 @@ export default function QuizList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const previewScrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     data,
@@ -133,6 +125,18 @@ export default function QuizList() {
     queryFn: () => getQuizDetail(previewQuiz!.id),
     enabled: !!previewQuiz,
   });
+
+  const previewResult: QuizResult | null =
+    previewQuiz && previewDetail
+      ? {
+          id: previewQuiz.id,
+          documentName: previewQuiz.documentName,
+          category: previewQuiz.category,
+          quantity: previewQuiz.quantity,
+          questions: previewDetail.questions,
+          totalQuestions: previewDetail.questions.length,
+        }
+      : null;
 
   const allChecked = quizzes.length > 0 && selected.size === quizzes.length;
   const someChecked = selected.size > 0 && selected.size < quizzes.length;
@@ -364,13 +368,19 @@ export default function QuizList() {
                           {quiz.category} · {quiz.quantity} questions
                         </p>
                       </div>
-                      <p className="text-xs text-slate-400 shrink-0">{quiz.date}</p>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-semibold text-emerald-700">{copy.takeQuizLabel}</span>
+                        <p className="text-xs text-slate-400">{quiz.date}</p>
+                      </div>
                     </div>
                     <div className="flex md:hidden items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-900 truncate">
                         {quiz.documentName}
                       </p>
-                      <p className="text-xs text-slate-400 shrink-0">{quiz.date}</p>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-semibold text-emerald-700">{copy.takeQuizLabel}</span>
+                        <p className="text-xs text-slate-400">{quiz.date}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -425,122 +435,14 @@ export default function QuizList() {
         confirmIcon={Download}
       />
 
-      {/* Quiz preview */}
-      <Modal
+      {/* Take quiz */}
+      <QuizResultModal
         open={!!previewQuiz}
+        quiz={previewResult}
+        loading={previewLoading}
+        loadError={previewError}
         onClose={closePreview}
-        maxWidthClassName="max-w-2xl"
-        contentClassName="px-6 pb-6"
-        scrollContainerRef={previewScrollContainerRef}
-        header={
-          previewQuiz && (
-            <div className="px-6 pr-14 pt-6 pb-4 border-b border-slate-100">
-              <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
-                {previewQuiz.documentName}
-              </h2>
-              <p className="text-sm text-slate-400">
-                {previewQuiz.category} · {previewQuiz.quantity} questions · {previewQuiz.date}
-              </p>
-            </div>
-          )
-        }
-        footer={
-          previewQuiz && (
-            <div className="px-6 pt-4 pb-6 border-t border-slate-100">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    closePreview();
-                    router.push("/user");
-                  }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  <ScrollText className="w-3.5 h-3.5" />
-                  {copy.previewModal.generateQuizLabel}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const quiz = previewQuiz;
-                    closePreview();
-                    setDownloadTarget({ ids: [quiz.id] });
-                  }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  {copy.previewModal.downloadLabel}
-                </button>
-              </div>
-            </div>
-          )
-        }
-      >
-        {previewQuiz && (
-          <div className="pt-5">
-            {previewLoading && (
-              <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <p className="text-sm">{copy.previewModal.loadingQuestions}</p>
-              </div>
-            )}
-
-            {previewError && (
-              <div className="py-16 flex flex-col items-center justify-center">
-                <EmptyState
-                  icon={FileX}
-                  title={copy.previewModal.previewErrorTitle}
-                  subtitle={copy.previewModal.previewErrorSubtitle}
-                />
-              </div>
-            )}
-
-            {!previewLoading && !previewError && previewDetail && (
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-4">
-                  {previewDetail.questions.map((q) => (
-                    <div key={q.number} className="flex flex-col gap-2">
-                      <p className="text-sm font-medium text-slate-900">
-                        {q.number}. {q.text}
-                      </p>
-
-                      {q.type === "mcq" && q.options && (
-                        <div className="grid grid-cols-2 gap-1.5 pl-4">
-                          {q.options.map((opt, i) => (
-                            <p key={i} className="text-xs text-slate-500">
-                              {String.fromCharCode(65 + i)}. {opt}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-
-                      {q.type === "tf" && (
-                        <div className="flex gap-4 pl-4">
-                          <p className="text-xs text-slate-500">A. True</p>
-                          <p className="text-xs text-slate-500">B. False</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-2">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    {copy.previewModal.answerKeyLabel}
-                  </p>
-                  <div className="grid grid-cols-3 gap-x-4 gap-y-1">
-                    {previewDetail.questions.map((q) => (
-                      <p key={q.number} className="text-xs text-slate-500">
-                        {q.number}. {q.answer}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
+      />
     </>
   );
 }

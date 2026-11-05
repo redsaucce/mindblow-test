@@ -8,7 +8,12 @@ from app.api.deps import get_current_user, get_db, verify_csrf
 from app.core.exceptions import QuizNotFoundError
 from app.models.activity_log import ActivityType
 from app.models.user_data import User
-from app.schemas.quiz import DeleteQuizResponse, QuizListResponse, QuizResponse, QuizType
+from app.schemas.quiz import (
+    DeleteQuizResponse,
+    QuizListResponse,
+    QuizResponse,
+    QuizType,
+)
 from app.services.activity_log_service import log_action
 from app.services.document_export_service import export_quiz, export_quizzes_zip
 from app.services.quiz_service import (
