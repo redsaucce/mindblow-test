@@ -9,6 +9,8 @@ from app.core.exceptions import QuizNotFoundError
 from app.models.activity_log import ActivityType
 from app.models.user_data import User
 from app.schemas.quiz import (
+    CheckQuizRequest,
+    CheckQuizResponse,
     DeleteQuizResponse,
     QuizListResponse,
     QuizResponse,
@@ -17,6 +19,7 @@ from app.schemas.quiz import (
 from app.services.activity_log_service import log_action
 from app.services.document_export_service import export_quiz, export_quizzes_zip
 from app.services.quiz_service import (
+    check_quiz_answers,
     delete_quiz,
     generate_quiz,
     get_quiz_with_questions,
@@ -177,11 +180,23 @@ async def get_quiz_by_id(
                 "text": q.question_text,
                 "type": quiz.quiz_type,
                 "options": q.options,
-                "answer": q.correct_answer,
             }
             for q in questions
         ],
     )
+
+
+@router.post("/{quiz_id}/check", response_model=CheckQuizResponse, dependencies=[Depends(verify_csrf)])
+async def check_quiz(
+    quiz_id: str,
+    body: CheckQuizRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await check_quiz_answers(
+        db, str(user.id), quiz_id, [(a.number, a.answer) for a in body.answers]
+    )
+    return CheckQuizResponse(**result)
 
 
 @router.delete("/{quiz_id}", response_model=DeleteQuizResponse, dependencies=[Depends(verify_csrf)])

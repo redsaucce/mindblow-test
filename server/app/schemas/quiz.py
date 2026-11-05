@@ -17,13 +17,12 @@ class QuestionResponse(BaseModel):
 
 
 class QuestionPublic(BaseModel):
-    """A question shown to the user, with its answer key so the browser can grade it."""
+    """A question as shown to the user. The answer is never included; it's checked on the server."""
 
     number: int
     text: str
     type: QuizType
     options: list[str] | None = None
-    answer: str
 
 
 class QuizResponse(BaseModel):
@@ -42,3 +41,27 @@ class QuizListResponse(BaseModel):
 
 class DeleteQuizResponse(BaseModel):
     message: str
+
+
+class CheckAnswer(BaseModel):
+    number: int
+    answer: str = ""
+
+
+class CheckQuizRequest(BaseModel):
+    answers: list[CheckAnswer]
+
+
+class QuestionResult(BaseModel):
+    number: int
+    type: QuizType
+    userAnswer: str
+    correctAnswer: str
+    correct: bool
+
+
+class CheckQuizResponse(BaseModel):
+    total: int
+    correct: int
+    percentage: int
+    results: list[QuestionResult]

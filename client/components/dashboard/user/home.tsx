@@ -213,12 +213,6 @@ export default function Home() {
     await runGeneration(file, quizType, quantity);
   };
 
-  const handleGenerateAnother = () => {
-    setResultModalOpen(false);
-    setResult(null);
-    setFile(null);
-  };
-
   return (
     <>
       <div className="flex-1 flex items-center justify-center">
@@ -426,9 +420,8 @@ export default function Home() {
 
       <QuizResultModal
         open={resultModalOpen}
-        result={result}
+        quiz={result}
         onClose={() => setResultModalOpen(false)}
-        onGenerateAnother={handleGenerateAnother}
       />
     </>
   );

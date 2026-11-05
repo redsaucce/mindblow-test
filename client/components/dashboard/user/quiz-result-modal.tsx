@@ -1,24 +1,30 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { Download, RefreshCw, BookOpen, Loader2 } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { CheckCircle2, Download, Loader2, XCircle } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
 import { triggerBrowserDownload } from "@/services/browser-download";
+import { ApiError } from "@/services/api-client";
+import { checkQuiz, type CheckQuizResult } from "@/services/dashboard/user-quiz-list-service";
 
 const copy = {
-  resultModal: {
-    title: "Quiz Generated!",
-    answerKeyLabel: "Answer Key",
-    downloadPrompt: "Download for the full quiz and answer key",
-    generateAnotherLabel: "Generate Another",
-    viewQuizzesLabel: "View My Quizzes",
-    downloadLabel: "Download Quiz",
-    downloadingLabel: "Preparing download...",
-    downloadSuccessMessage: "Download started",
-    downloadErrorMessage: "Download failed. Please try again.",
-  },
+  checkLabel: "Check answers",
+  tryAgainLabel: "Try again",
+  downloadLabel: "Download",
+  downloadingLabel: "Preparing download...",
+  downloadSuccess: "Download started",
+  downloadError: "Download failed. Please try again.",
+  checkError: "Something went wrong. Please try again.",
+  leftTemplate: "{count} questions left to answer",
+  scoreTemplate: "{correct} of {total} correct ({percentage}%)",
+  correctLabel: "Correct",
+  wrongLabel: "Wrong",
+  yourAnswerLabel: "Your answer:",
+  correctAnswerLabel: "Correct answer:",
+  loadingQuestions: "Loading questions...",
+  loadErrorTitle: "Couldn't load this quiz",
+  loadErrorSubtitle: "Please try again.",
 };
 
 export interface Question {
@@ -26,7 +32,6 @@ export interface Question {
   text: string;
   type: "mcq" | "tf" | "identification";
   options?: string[];
-  answer: string;
 }
 
 export interface QuizResult {
@@ -38,162 +43,271 @@ export interface QuizResult {
   totalQuestions: number;
 }
 
-async function downloadQuiz(quizId: string) {
-  const result = await downloadQuizzesRequest([quizId]);
-  triggerBrowserDownload(result.blob, result.filename);
+function fill(template: string, values: Record<string, number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 }
 
+function optionsFor(q: Question): string[] {
+  return q.type === "tf" ? ["True", "False"] : (q.options ?? []);
+}
+
+function isAnswered(value: string | undefined) {
+  return !!value && value.trim() !== "";
+}
+
+/**
+ * Takes a quiz in the app. Used after generation and from My Quizzes.
+ * Answers are graded on the server, so the correct answers are only returned by a check.
+ */
 export function QuizResultModal({
   open,
-  result,
+  quiz,
   onClose,
-  onGenerateAnother,
+  loading = false,
+  loadError = false,
 }: {
   open: boolean;
-  result: QuizResult | null;
+  quiz: QuizResult | null;
   onClose: () => void;
-  onGenerateAnother: () => void;
+  loading?: boolean;
+  loadError?: boolean;
 }) {
-  const router = useRouter();
+  const groupId = useId();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [results, setResults] = useState<CheckQuizResult | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState("");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  if (!result) return null;
-
-  const previewQuestions = result.questions;
-
-  const handleClose = () => {
+  // Start fresh each time the dialog opens or a different quiz is shown.
+  useEffect(() => {
+    setAnswers({});
+    setResults(null);
+    setCheckError("");
     setDownloadMessage("");
-    onClose();
+  }, [open, quiz?.id]);
+
+  // Move focus to the score once it appears.
+  useEffect(() => {
+    if (results) scoreRef.current?.focus();
+  }, [results]);
+
+  const questions = quiz?.questions ?? [];
+  const answeredCount = questions.filter((q) => isAnswered(answers[q.number])).length;
+  const remaining = questions.length - answeredCount;
+  const locked = results !== null;
+
+  const setAnswer = (number: number, value: string) => {
+    setAnswers((prev) => ({ ...prev, [number]: value }));
   };
 
-  const handleGenerateAnotherClick = () => {
-    setDownloadMessage("");
-    onGenerateAnother();
+  const resultFor = (number: number) => results?.results.find((r) => r.number === number);
+
+  const handleCheck = async () => {
+    if (!quiz || remaining > 0 || checking) return;
+    setChecking(true);
+    setCheckError("");
+    try {
+      const payload = questions.map((q) => ({ number: q.number, answer: answers[q.number] ?? "" }));
+      setResults(await checkQuiz(quiz.id, payload));
+    } catch (err) {
+      setCheckError(err instanceof ApiError ? err.detail : copy.checkError);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleTryAgain = () => {
+    setAnswers({});
+    setResults(null);
+    setCheckError("");
   };
 
   const handleDownload = async () => {
+    if (!quiz) return;
     setIsDownloading(true);
     setDownloadMessage("");
     try {
-      await downloadQuiz(result.id);
-      setDownloadMessage(copy.resultModal.downloadSuccessMessage);
+      const result = await downloadQuizzesRequest([quiz.id]);
+      triggerBrowserDownload(result.blob, result.filename);
+      setDownloadMessage(copy.downloadSuccess);
     } catch {
-      setDownloadMessage(copy.resultModal.downloadErrorMessage);
+      setDownloadMessage(copy.downloadError);
     } finally {
       setIsDownloading(false);
     }
   };
 
-  const handleViewQuizzes = () => {
-    onClose();
-    router.push("/user/quizzes");
-  };
-
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       maxWidthClassName="max-w-2xl"
       contentClassName="px-6 pb-6"
       scrollContainerRef={scrollContainerRef}
       header={
         <div className="px-6 pr-14 pt-6 pb-4 border-b border-slate-100">
           <h2 className="font-heading text-xl font-bold text-slate-900 mb-1">
-            {copy.resultModal.title}
+            {quiz?.documentName ?? ""}
           </h2>
-          <p className="text-sm text-slate-400">
-            {result.documentName} · {result.category} · {result.totalQuestions} questions
-          </p>
+          {quiz && (
+            <p className="text-sm text-slate-400">
+              {quiz.category} · {quiz.totalQuestions} questions
+            </p>
+          )}
         </div>
       }
       footer={
-        <div className="px-6 pt-4 pb-6 border-t border-slate-100 flex flex-col gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={handleGenerateAnotherClick}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              {copy.resultModal.generateAnotherLabel}
-            </button>
-            <button
-              type="button"
-              onClick={handleViewQuizzes}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              {copy.resultModal.viewQuizzesLabel}
-            </button>
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
-            >
-              {isDownloading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {copy.resultModal.downloadingLabel}
-                </>
+        quiz ? (
+          <div className="px-6 pt-4 pb-6 border-t border-slate-100 flex flex-col gap-3">
+            {results ? (
+              <div
+                ref={scoreRef}
+                tabIndex={-1}
+                role="status"
+                className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800 focus:outline-none"
+              >
+                {fill(copy.scoreTemplate, {
+                  correct: results.correct,
+                  total: results.total,
+                  percentage: results.percentage,
+                })}
+              </div>
+            ) : (
+              remaining > 0 && (
+                <p className="text-xs text-slate-400 text-center">
+                  {fill(copy.leftTemplate, { count: remaining })}
+                </p>
+              )
+            )}
+
+            {checkError && <p className="text-xs text-red-500 text-center">{checkError}</p>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60 transition-colors"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {copy.downloadingLabel}
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5" />
+                    {copy.downloadLabel}
+                  </>
+                )}
+              </button>
+              {results ? (
+                <button
+                  type="button"
+                  onClick={handleTryAgain}
+                  className="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  {copy.tryAgainLabel}
+                </button>
               ) : (
-                <>
-                  <Download className="w-3.5 h-3.5" />
-                  {copy.resultModal.downloadLabel}
-                </>
-              )}
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-400 text-center">
-            {downloadMessage || copy.resultModal.downloadPrompt}
-          </p>
-        </div>
-      }
-    >
-      <div className="flex flex-col gap-5 pt-5">
-        <div className="flex flex-col gap-4">
-          {previewQuestions.map((q) => (
-            <div key={q.number} className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-slate-900">
-                {q.number}. {q.text}
-              </p>
-
-              {q.type === "mcq" && q.options && (
-                <div className="grid grid-cols-2 gap-1.5 pl-4">
-                  {q.options.map((opt, i) => (
-                    <p key={i} className="text-xs text-slate-500">
-                      {String.fromCharCode(65 + i)}. {opt}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {q.type === "tf" && (
-                <div className="flex gap-4 pl-4">
-                  <p className="text-xs text-slate-500">A. True</p>
-                  <p className="text-xs text-slate-500">B. False</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  disabled={remaining > 0 || checking}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-60 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  {checking && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {copy.checkLabel}
+                </button>
               )}
             </div>
-          ))}
-        </div>
 
-        <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            {copy.resultModal.answerKeyLabel}
-          </p>
-          <div className="grid grid-cols-3 gap-x-4 gap-y-1">
-            {previewQuestions.map((q) => (
-              <p key={q.number} className="text-xs text-slate-500">
-                {q.number}. {q.answer}
-              </p>
-            ))}
+            <p className="text-xs text-slate-400 text-center">{downloadMessage}</p>
           </div>
+        ) : undefined
+      }
+    >
+      {loading && <p className="text-sm text-slate-500 text-center py-8">{copy.loadingQuestions}</p>}
+
+      {loadError && (
+        <div className="flex flex-col items-center gap-1 py-8 text-center">
+          <p className="text-sm text-slate-700">{copy.loadErrorTitle}</p>
+          <p className="text-xs text-slate-400">{copy.loadErrorSubtitle}</p>
         </div>
-      </div>
+      )}
+
+      {quiz && !loading && !loadError && (
+        <div className="flex flex-col gap-5 pt-5">
+          {questions.map((q) => {
+            const r = resultFor(q.number);
+            const name = `${groupId}-q${q.number}`;
+            const value = answers[q.number] ?? "";
+            return (
+              <fieldset key={q.number} className="flex flex-col gap-2">
+                <legend className="text-sm font-medium text-slate-900 mb-2">
+                  {q.number}. {q.text}
+                </legend>
+
+                {q.type === "identification" ? (
+                  <input
+                    type="text"
+                    aria-label={`Answer for question ${q.number}`}
+                    value={value}
+                    disabled={locked}
+                    onChange={(e) => setAnswer(q.number, e.target.value)}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 disabled:bg-slate-50"
+                  />
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {optionsFor(q).map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="radio"
+                          name={name}
+                          value={opt}
+                          checked={value === opt}
+                          disabled={locked}
+                          onChange={() => setAnswer(q.number, opt)}
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {r && (
+                  <div className="flex items-start gap-2 text-sm">
+                    {r.correct ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <div className="flex flex-col">
+                      <p className={r.correct ? "font-medium text-emerald-700" : "font-medium text-red-600"}>
+                        {r.correct ? copy.correctLabel : copy.wrongLabel}
+                      </p>
+                      {!r.correct && (
+                        <>
+                          <p className="text-slate-500">
+                            {copy.yourAnswerLabel} {r.userAnswer || "—"}
+                          </p>
+                          <p className="text-slate-500">
+                            {copy.correctAnswerLabel} {r.correctAnswer}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </fieldset>
+            );
+          })}
+        </div>
+      )}
     </Modal>
   );
 }

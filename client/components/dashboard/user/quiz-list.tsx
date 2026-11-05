@@ -57,7 +57,14 @@ const copy = {
     selectLimitTemplate: "You can select up to {count} quizzes at a time.",
   },
   loadingQuizzes: "Loading your quizzes...",
-  takeQuizLabel: "Take quiz",
+  previewModal: {
+    downloadLabel: "Download Quiz",
+    generateQuizLabel: "Generate Quiz",
+    answerKeyLabel: "Answer key",
+    loadingQuestions: "Loading questions...",
+    previewErrorTitle: "Couldn't load this quiz",
+    previewErrorSubtitle: "Please try again.",
+  },
 };
 
 type DeleteTarget = { type: "bulk" } | null;
@@ -368,19 +375,13 @@ export default function QuizList() {
                           {quiz.category} · {quiz.quantity} questions
                         </p>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-semibold text-emerald-700">{copy.takeQuizLabel}</span>
-                        <p className="text-xs text-slate-400">{quiz.date}</p>
-                      </div>
+                      <p className="text-xs text-slate-400 shrink-0">{quiz.date}</p>
                     </div>
                     <div className="flex md:hidden items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-900 truncate">
                         {quiz.documentName}
                       </p>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-semibold text-emerald-700">{copy.takeQuizLabel}</span>
-                        <p className="text-xs text-slate-400">{quiz.date}</p>
-                      </div>
+                      <p className="text-xs text-slate-400 shrink-0">{quiz.date}</p>
                     </div>
                   </div>
                 </div>

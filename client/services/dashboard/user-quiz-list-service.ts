@@ -19,7 +19,6 @@ interface QuizResponse {
     number: number;
     text: string;
     options?: string[] | null;
-    answer: string;
   }[];
 }
 
@@ -36,7 +35,6 @@ export interface QuizQuestionDetail {
   text: string;
   type: "mcq" | "tf" | "identification";
   options?: string[];
-  answer: string;
 }
 
 export interface QuizDetail extends Quiz {
@@ -81,7 +79,6 @@ export async function getQuizDetail(id: string): Promise<QuizDetail> {
       text: q.text,
       type: SERVER_TYPE_TO_LOCAL[response.quizType],
       options: q.options ?? undefined,
-      answer: q.answer,
     })),
   };
 }
@@ -91,3 +88,28 @@ export async function deleteQuiz(id: string): Promise<DeleteQuizResponse> {
 }
 
 export { ApiError };
+
+export interface CheckAnswerInput {
+  number: number;
+  answer: string;
+}
+
+export interface QuestionCheckResult {
+  number: number;
+  type: string;
+  userAnswer: string;
+  correctAnswer: string;
+  correct: boolean;
+}
+
+export interface CheckQuizResult {
+  total: number;
+  correct: number;
+  percentage: number;
+  results: QuestionCheckResult[];
+}
+
+/** Sends the user's answers to the server, which grades them against the stored answer key. */
+export async function checkQuiz(id: string, answers: CheckAnswerInput[]): Promise<CheckQuizResult> {
+  return apiClient.post<CheckQuizResult>(`/quizzes/${encodeURIComponent(id)}/check`, { answers });
+}

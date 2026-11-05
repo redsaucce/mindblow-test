@@ -5,7 +5,7 @@ from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import GenerationRateLimitedError, QuizNotFoundError
+from app.core.exceptions import GenerationRateLimitedError, IncompleteAnswersError, QuizNotFoundError
 from app.models.activity_log import ActivityType
 from app.models.quiz_data import Quiz, QuizType as ModelQuizType
 from app.models.quiz_question import QuizQuestion
@@ -164,3 +164,50 @@ async def generate_quiz(
     )
 
     return quiz
+
+
+def _normalise_identification(text: str) -> str:
+    """Case-insensitive, with leading and trailing spaces removed and runs of spaces collapsed."""
+    return " ".join(text.split()).lower()
+
+
+def _is_correct(quiz_type: str, user_answer: str, correct_answer: str) -> bool:
+    if quiz_type == "identification":
+        return _normalise_identification(user_answer) == _normalise_identification(correct_answer)
+    # Multiple choice and true/false answers are stored exactly as the options or "True"/"False".
+    return user_answer.strip() == correct_answer.strip()
+
+
+async def check_quiz_answers(
+    db: AsyncSession, user_id: str, quiz_id: str, answers: list[tuple[int, str]]
+) -> dict:
+    """Grades the user's answers against the stored answer key. Every question must be answered."""
+    quiz, questions = await get_quiz_with_questions(db, user_id, quiz_id)
+    quiz_type = getattr(quiz.quiz_type, "value", quiz.quiz_type)
+
+    given = {number: answer for number, answer in answers}
+    for q in questions:
+        if not given.get(q.question_order, "").strip():
+            raise IncompleteAnswersError()
+
+    results = []
+    for q in questions:
+        user_answer = given[q.question_order]
+        results.append(
+            {
+                "number": q.question_order,
+                "type": quiz_type,
+                "userAnswer": user_answer,
+                "correctAnswer": q.correct_answer,
+                "correct": _is_correct(quiz_type, user_answer, q.correct_answer),
+            }
+        )
+
+    correct = sum(1 for r in results if r["correct"])
+    total = len(results)
+    return {
+        "total": total,
+        "correct": correct,
+        "percentage": round(correct * 100 / total) if total else 0,
+        "results": results,
+    }
