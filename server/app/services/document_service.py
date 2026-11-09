@@ -4,7 +4,7 @@ import zipfile
 
 import pypdf
 from docx import Document as DocxDocument
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from lxml import etree
 
 from app.config import settings
@@ -18,6 +18,8 @@ from app.core.exceptions import (
 
 MIN_EXTRACTED_CHARS = 50
 MAX_EXTRACTED_CHARS = 150_000
+MAX_FILES_PER_QUIZ = 10
+MAX_TOTAL_UPLOAD_BYTES = 30 * 1024 * 1024
 
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 PDF_CONTENT_TYPE = "application/pdf"
@@ -53,6 +55,37 @@ def _ensure_has_text(text: str) -> str:
     if not text.strip():
         raise DocumentWithoutTextError()
     return text
+
+
+async def extract_text_from_files(files: list[UploadFile]) -> tuple[str, list[str]]:
+    """Extracts and combines the text of every file, in the order selected.
+
+    The whole upload is rejected if any file fails. Each error names the file.
+    A single file is returned without a source label, as before.
+    """
+    from app.core.exceptions import DuplicateFileError, TooManyFilesError, UploadTooLargeError
+
+    if len(files) > MAX_FILES_PER_QUIZ:
+        raise TooManyFilesError(MAX_FILES_PER_QUIZ)
+    if sum(f.size or 0 for f in files) > MAX_TOTAL_UPLOAD_BYTES:
+        raise UploadTooLargeError(MAX_TOTAL_UPLOAD_BYTES // (1024 * 1024))
+
+    names: list[str] = []
+    parts: list[str] = []
+    seen: set[str] = set()
+    for file in files:
+        name = file.filename or "document"
+        if name.lower() in seen:
+            raise DuplicateFileError(name)
+        seen.add(name.lower())
+        try:
+            text = await extract_text(file)
+        except HTTPException as exc:
+            raise HTTPException(status_code=exc.status_code, detail=f"{name}: {exc.detail}") from exc
+        names.append(name)
+        parts.append(text if len(files) == 1 else f"[Source: {name}]\n{text}")
+
+    return "\n\n".join(parts), names
 
 
 async def extract_text(file: UploadFile) -> str:

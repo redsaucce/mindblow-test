@@ -16,11 +16,17 @@ import {
 
 const copy = {
   upload: {
-    label: "Upload your PDF or DOCX, up to 10MB",
+    label: "Upload PDF or DOCX files, up to 10 files",
     maxSizeBytes: 10 * 1024 * 1024,
+    maxFiles: 10,
+    maxTotalBytes: 30 * 1024 * 1024,
     invalidTypeMessage: "Only PDF or DOCX files are supported.",
     tooLargeMessage: "File is too large — max size is 10MB.",
-    changeLabel: "Change",
+    tooManyMessage: "You can add up to 10 files per quiz.",
+    duplicateMessage: "That file is already added.",
+    totalTooLargeMessage: "Together these files are over the 30MB limit.",
+    addLabel: "Add files",
+    removeLabel: "Remove",
   },
   quizType: {
     label: "Quiz Type",
@@ -100,17 +106,17 @@ function resolveError(err: unknown): { message: string; canRetry: boolean } {
 }
 
 async function generateQuiz(
-  file: File,
+  files: File[],
   category: string,
   quantity: number
 ): Promise<QuizResult> {
   const serverQuizType = QUIZ_TYPE_TO_SERVER[category] ?? "multiple_choice";
-  const created = await generateQuizRequest(file, serverQuizType, quantity);
+  const created = await generateQuizRequest(files, serverQuizType, quantity);
   const detail = await getQuizDetail(created.id);
 
   return {
     id: detail.id,
-    documentName: file.name,
+    documentName: files.map((f) => f.name).join(", "),
     category: SERVER_TYPE_TO_LABEL[created.quizType],
     quantity: detail.quantity,
     questions: detail.questions,
@@ -120,7 +126,7 @@ async function generateQuiz(
 
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState("");
   const [quizType, setQuizType] = useState<string>(copy.quizType.options[0].value);
   const [quantity, setQuantity] = useState<number>(copy.quantity.min);
@@ -147,35 +153,67 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState(copy.errorDialog.description);
   const [canRetry, setCanRetry] = useState(true);
 
-  const handleFile = useCallback((f: File) => {
+  const isValidType = (f: File) => {
     // Some systems report an empty or unexpected MIME type for valid DOCX
-    // files, so fall back to the extension. The server still validates the file.
+    // files, so fall back to the extension. The server still validates each file.
     const name = f.name.toLowerCase();
     const isPdf = f.type === "application/pdf" || name.endsWith(".pdf");
     const isDocx =
       f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       name.endsWith(".docx");
-    if (!isPdf && !isDocx) {
-      setUploadError(copy.upload.invalidTypeMessage);
-      return;
-    }
-    if (f.size > copy.upload.maxSizeBytes) {
-      setUploadError(copy.upload.tooLargeMessage);
-      return;
-    }
-    setUploadError("");
-    setFile(f);
-  }, []);
+    return isPdf || isDocx;
+  };
+
+  // Adds files to the list. If any file in this selection fails a check, none of
+  // the selection is added, and the message names the file.
+  const handleFiles = useCallback(
+    (incoming: File[]) => {
+      const next = [...files];
+      for (const f of incoming) {
+        if (!isValidType(f)) {
+          setUploadError(`${f.name}: ${copy.upload.invalidTypeMessage}`);
+          return;
+        }
+        if (f.size > copy.upload.maxSizeBytes) {
+          setUploadError(`${f.name}: ${copy.upload.tooLargeMessage}`);
+          return;
+        }
+        if (next.some((existing) => existing.name.toLowerCase() === f.name.toLowerCase())) {
+          setUploadError(`${f.name}: ${copy.upload.duplicateMessage}`);
+          return;
+        }
+        if (next.length >= copy.upload.maxFiles) {
+          setUploadError(copy.upload.tooManyMessage);
+          return;
+        }
+        const total = next.reduce((sum, existing) => sum + existing.size, f.size);
+        if (total > copy.upload.maxTotalBytes) {
+          setUploadError(copy.upload.totalTooLargeMessage);
+          return;
+        }
+        next.push(f);
+      }
+      setUploadError("");
+      setFiles(next);
+    },
+    [files]
+  );
 
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length > 0) handleFiles(picked);
+    // Clear the input so picking the same file again still triggers a change.
+    e.target.value = "";
   };
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (f) handleFile(f);
+    handleFiles(Array.from(e.dataTransfer.files ?? []));
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setUploadError("");
   };
 
   const formatFileSize = (bytes: number) => {
@@ -184,10 +222,10 @@ export default function Home() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const runGeneration = async (f: File, type: string, qty: number) => {
+  const runGeneration = async (fs: File[], type: string, qty: number) => {
     setStatus("generating");
     try {
-      const generated = await generateQuiz(f, type, qty);
+      const generated = await generateQuiz(fs, type, qty);
       setProgress(100);
       setStatus("success");
       setTimeout(() => {
@@ -204,32 +242,34 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
-    if (!file) return;
-    await runGeneration(file, quizType, quantity);
+    if (files.length === 0) return;
+    await runGeneration(files, quizType, quantity);
   };
 
   const handleTryAgain = async () => {
-    if (!file) return;
-    await runGeneration(file, quizType, quantity);
+    if (files.length === 0) return;
+    await runGeneration(files, quizType, quantity);
   };
+
+  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
 
   return (
     <>
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col gap-6 w-full max-w-2xl">
           <div
-            className={`rounded-2xl h-40 transition-all duration-200 ${
-              !file
+            className={`rounded-2xl min-h-40 transition-all duration-200 ${
+              files.length === 0
                 ? "bg-transparent border-2 border-dashed border-slate-300"
                 : "bg-white border border-slate-200 shadow-sm"
             }`}
           >
             <div
               className={`flex items-center justify-center h-full ${
-                file ? "px-4 sm:px-6" : ""
+                files.length > 0 ? "px-4 sm:px-6" : ""
               }`}
             >
-              {!file ? (
+              {files.length === 0 ? (
                 <div
                   role="button"
                   tabIndex={0}
@@ -250,23 +290,46 @@ export default function Home() {
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3 sm:gap-4 w-full">
-                  <div className="min-w-0">
-                    <p className="text-sm sm:text-base font-semibold text-slate-900 truncate">
-                      {file.name}
+                <div className="flex flex-col gap-3 w-full">
+                  <ul className="flex flex-col gap-2">
+                    {files.map((f, i) => (
+                      <li
+                        key={`${f.name}-${i}`}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm sm:text-base font-semibold text-slate-900 truncate">
+                            {f.name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                            {f.name.split(".").pop()?.toUpperCase()} · {formatFileSize(f.size)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label={`${copy.upload.removeLabel} ${f.name}`}
+                          onClick={() => removeFile(i)}
+                          className="rounded-full px-3 py-1.5 shrink-0 text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          {copy.upload.removeLabel}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs sm:text-sm text-slate-400">
+                      {files.length} of {copy.upload.maxFiles} files · {formatFileSize(totalBytes)} of{" "}
+                      {copy.upload.maxTotalBytes / (1024 * 1024)}MB
                     </p>
-                    <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                      {file.name.split(".").pop()?.toUpperCase()} ·{" "}
-                      {formatFileSize(file.size)}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={files.length >= copy.upload.maxFiles}
+                      className="rounded-full px-4 py-2 shrink-0 text-xs sm:text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                    >
+                      {copy.upload.addLabel}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="rounded-full px-4 sm:px-6 py-2 shrink-0 text-xs sm:text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                  >
-                    {copy.upload.changeLabel}
-                  </button>
                 </div>
               )}
             </div>
@@ -274,6 +337,7 @@ export default function Home() {
               ref={fileInputRef}
               type="file"
               accept=".pdf,.docx"
+              multiple
               className="hidden"
               onChange={onFileChange}
             />
@@ -360,7 +424,7 @@ export default function Home() {
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={!file}
+            disabled={files.length === 0}
             className="w-full inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 disabled:opacity-50 disabled:hover:from-emerald-600 disabled:hover:to-green-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/25 transition-all duration-200"
           >
             {copy.generateLabel}

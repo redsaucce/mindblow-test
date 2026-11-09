@@ -30,12 +30,14 @@ export interface GeneratedQuiz {
 }
 
 export async function generateQuiz(
-  file: File,
+  files: File[],
   quizType: QuizTypeInput,
   questionCount: number
 ): Promise<GeneratedQuiz> {
   const formData = new FormData();
-  formData.append("file", file);
+  for (const file of files) {
+    formData.append("file", file);
+  }
   formData.append("quizType", quizType);
   formData.append("questionCount", String(questionCount));
 

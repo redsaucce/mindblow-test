@@ -107,3 +107,27 @@ class IncompleteAnswersError(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Answer every question before checking.",
         )
+
+
+class TooManyFilesError(HTTPException):
+    def __init__(self, max_files: int):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You can upload up to {max_files} files per quiz.",
+        )
+
+
+class DuplicateFileError(HTTPException):
+    def __init__(self, name: str):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The same file was selected more than once: {name}",
+        )
+
+
+class UploadTooLargeError(HTTPException):
+    def __init__(self, max_mb: int):
+        super().__init__(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"The files together are too large. The total limit is {max_mb}MB.",
+        )

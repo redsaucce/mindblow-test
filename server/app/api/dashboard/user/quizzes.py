@@ -1,6 +1,6 @@
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,7 +65,7 @@ async def get_quizzes(
 
 @router.post("", response_model=QuizResponse, dependencies=[Depends(verify_csrf)])
 async def create_quiz(
-    file: UploadFile,
+    file: list[UploadFile] = File(...),
     quizType: QuizType = Form(...),
     questionCount: int = Form(...),
     user: User = Depends(get_current_user),
@@ -75,7 +75,7 @@ async def create_quiz(
         db,
         user_id=str(user.id),
         user_email=user.email,
-        file=file,
+        files=file,
         quiz_type=quizType,
         question_count=questionCount,
     )

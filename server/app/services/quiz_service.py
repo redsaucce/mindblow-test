@@ -96,11 +96,11 @@ async def generate_quiz(
     db: AsyncSession,
     user_id: str,
     user_email: str,
-    file: UploadFile,
+    files: list[UploadFile],
     quiz_type: QuizType,
     question_count: int,
 ) -> Quiz:
-    raw_text = await document_service.extract_text(file)
+    raw_text, file_names = await document_service.extract_text_from_files(files)
     cleaned_text = document_service.clean_extracted_text(raw_text)
 
     # Checked after the upload is read, so an invalid file doesn't use up a slot.
@@ -128,8 +128,7 @@ async def generate_quiz(
 
     title = generated.title.strip()
     if not title:
-        filename = file.filename or "Untitled Quiz"
-        title = filename.rsplit(".", 1)[0]
+        title = ", ".join(name.rsplit(".", 1)[0] for name in file_names) or "Untitled Quiz"
     title = title[:50]
 
     quiz = Quiz(
@@ -159,7 +158,10 @@ async def generate_quiz(
     await log_action(
         db,
         email=user_email,
-        description=f'Generated quiz "{title}"',
+        description=(
+            f'Generated quiz "{title}"'
+            + (f" from {len(file_names)} files" if len(file_names) > 1 else "")
+        ),
         type=ActivityType.GENERATED,
     )
 
