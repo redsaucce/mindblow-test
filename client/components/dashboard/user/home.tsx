@@ -278,15 +278,15 @@ export default function Home() {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col gap-6 w-full max-w-2xl">
           <div
-            className={`rounded-2xl ${files.length === 0 ? "h-40" : "min-h-40"} transition-all duration-200 ${
+            className={`rounded-2xl flex flex-col ${files.length === 0 ? "h-40" : "min-h-40"} transition-all duration-200 ${
               files.length === 0
                 ? "bg-transparent border-2 border-dashed border-slate-300"
                 : "bg-white border border-slate-200 shadow-sm"
             }`}
           >
             <div
-              className={`flex items-center justify-center h-full ${
-                files.length > 0 ? "px-4 sm:px-6" : ""
+              className={`flex flex-1 flex-col justify-center w-full ${
+                files.length > 0 ? "px-4 sm:px-6 py-4" : ""
               }`}
             >
               {files.length === 0 ? (
@@ -314,7 +314,7 @@ export default function Home() {
                   {files.length === 1 ? (
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm sm:text-base font-semibold text-slate-900 truncate">
+                        <p className="text-sm sm:text-base font-semibold text-slate-900 break-all">
                           {files[0].name}
                         </p>
                         <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
