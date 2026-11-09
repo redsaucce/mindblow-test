@@ -389,7 +389,7 @@ export default function Home() {
                 {copy.quizType.options.map(({ value, label }) => (
                   <label
                     key={value}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer transition-all duration-200 w-full sm:w-auto ${
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm whitespace-nowrap cursor-pointer transition-all duration-200 w-full sm:w-auto ${
                       quizType === value
                         ? "border-green-700 text-green-700 bg-emerald-50"
                         : "border-slate-200 text-slate-600 hover:bg-slate-50"
