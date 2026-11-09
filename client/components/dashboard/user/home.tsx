@@ -385,7 +385,7 @@ export default function Home() {
               <label className="text-sm font-semibold text-slate-700 mb-3 block">
                 {copy.quizType.label}
               </label>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 {copy.quizType.options.map(({ value, label }) => (
                   <label
                     key={value}
