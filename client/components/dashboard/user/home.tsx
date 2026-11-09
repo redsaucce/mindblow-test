@@ -311,36 +311,48 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3 w-full">
-                  <ul className="flex flex-col gap-2">
-                    {files.map((f, i) => (
-                      <li
-                        key={`${f.name}-${i}`}
-                        className="flex items-center justify-between gap-3"
+                  {files.length === 1 ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm sm:text-base font-semibold text-slate-900 truncate">
+                          {files[0].name}
+                        </p>
+                        <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                          {files[0].name.split(".").pop()?.toUpperCase()} · {formatFileSize(files[0].size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`${copy.upload.removeLabel} ${files[0].name}`}
+                        onClick={() => removeFile(0)}
+                        className="rounded-full px-3 py-1.5 shrink-0 text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
                       >
-                        <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-semibold text-slate-900 truncate">
-                            {f.name}
-                          </p>
-                          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                            {f.name.split(".").pop()?.toUpperCase()} · {formatFileSize(f.size)}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          aria-label={`${copy.upload.removeLabel} ${f.name}`}
-                          onClick={() => removeFile(i)}
-                          className="rounded-full px-3 py-1.5 shrink-0 text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                        >
-                          {copy.upload.removeLabel}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                        {copy.upload.removeLabel}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm sm:text-base font-semibold text-slate-900">
+                      {files.length} files selected
+                    </p>
+                  )}
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs sm:text-sm text-slate-400">
                       {files.length} of {copy.upload.maxFiles} files · {formatFileSize(totalBytes)} of{" "}
                       {copy.upload.maxTotalBytes / (1024 * 1024)}MB
                     </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                    {files.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiles([]);
+                          setUploadError("");
+                        }}
+                        className="rounded-full px-4 py-2 text-xs sm:text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        Clear all
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -349,6 +361,7 @@ export default function Home() {
                     >
                       {copy.upload.addLabel}
                     </button>
+                    </div>
                   </div>
                 </div>
               )}
