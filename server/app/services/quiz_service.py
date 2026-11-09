@@ -7,9 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import GenerationRateLimitedError, IncompleteAnswersError, QuizNotFoundError
 from app.models.activity_log import ActivityType
-from app.models.quiz_data import Quiz, QuizType as ModelQuizType
+from app.models.quiz_data import Quiz, QuizFormat as ModelQuizFormat
 from app.models.quiz_question import QuizQuestion
-from app.schemas.quiz import QuizType
 from app.services import ai_service, document_service, retrieval_service
 from app.services.activity_log_service import log_action
 from app.services.prompt_service import get_or_create_default
@@ -97,7 +96,7 @@ async def generate_quiz(
     user_id: str,
     user_email: str,
     files: list[UploadFile],
-    quiz_type: QuizType,
+    quiz_type: str,
     question_count: int,
 ) -> Quiz:
     raw_text, file_names = await document_service.extract_text_from_files(files)
@@ -136,7 +135,7 @@ async def generate_quiz(
         title=title,
         direction=generated.direction,
         question_count=question_count,
-        quiz_type=ModelQuizType(getattr(quiz_type, "value", quiz_type)),
+        quiz_type=ModelQuizFormat(getattr(quiz_type, "value", quiz_type)),
     )
     db.add(quiz)
     await db.flush()
@@ -149,6 +148,7 @@ async def generate_quiz(
                 options=q.options,
                 correct_answer=q.answer,
                 question_order=q.number,
+                question_type=q.type,
             )
         )
 
@@ -166,6 +166,9 @@ async def generate_quiz(
     )
 
     return quiz
+
+
+SECTION_TYPES = ["multiple_choice", "true_false", "identification"]
 
 
 def _normalise_identification(text: str) -> str:
@@ -195,21 +198,38 @@ async def check_quiz_answers(
     results = []
     for q in questions:
         user_answer = given[q.question_order]
+        # Each question is graded by its own type. Mixed quizzes need this; older quizzes
+        # have no question type, so the quiz's type applies.
+        q_type = q.question_type or quiz_type
         results.append(
             {
                 "number": q.question_order,
-                "type": quiz_type,
+                "type": q_type,
                 "userAnswer": user_answer,
                 "correctAnswer": q.correct_answer,
-                "correct": _is_correct(quiz_type, user_answer, q.correct_answer),
+                "correct": _is_correct(q_type, user_answer, q.correct_answer),
             }
         )
 
     correct = sum(1 for r in results if r["correct"])
     total = len(results)
+
+    sections = []
+    for section_type in SECTION_TYPES:
+        in_section = [r for r in results if r["type"] == section_type]
+        if in_section:
+            sections.append(
+                {
+                    "type": section_type,
+                    "total": len(in_section),
+                    "correct": sum(1 for r in in_section if r["correct"]),
+                }
+            )
+
     return {
         "total": total,
         "correct": correct,
         "percentage": round(correct * 100 / total) if total else 0,
         "results": results,
+        "sections": sections,
     }

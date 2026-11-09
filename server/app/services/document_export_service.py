@@ -4,13 +4,14 @@ import zipfile
 
 from docx import Document as DocxDocument
 
-from app.models.quiz_data import Quiz, QuizType
+from app.models.quiz_data import Quiz, QuizFormat, QuizType
 from app.models.quiz_question import QuizQuestion
 
 QUIZ_TYPE_LABELS = {
     QuizType.MULTIPLE_CHOICE: "Multiple Choice",
     QuizType.TRUE_FALSE: "True or False",
     QuizType.IDENTIFICATION: "Identification",
+    QuizFormat.MIXED: "Mixed",
 }
 
 
@@ -24,13 +25,18 @@ def export_quiz(quiz: Quiz, questions: list[QuizQuestion]) -> bytes:
         doc.add_paragraph(quiz.direction)
 
     doc.add_heading("Questions", level=2)
+    current_section = None
     for q in sorted(questions, key=lambda x: x.question_order):
+        q_type = q.question_type or quiz.quiz_type
+        if quiz.quiz_type == QuizFormat.MIXED and q_type != current_section:
+            current_section = q_type
+            doc.add_heading(QUIZ_TYPE_LABELS.get(q_type, q_type), level=3)
         doc.add_paragraph(f"{q.question_order}. {q.question_text}")
-        if quiz.quiz_type == QuizType.MULTIPLE_CHOICE and q.options:
+        if q_type == QuizType.MULTIPLE_CHOICE and q.options:
             for i, option in enumerate(q.options):
                 letter = chr(ord("A") + i)
                 doc.add_paragraph(f"    {letter}. {option}")
-        elif quiz.quiz_type == QuizType.TRUE_FALSE:
+        elif q_type == QuizType.TRUE_FALSE:
             doc.add_paragraph("    A. True")
             doc.add_paragraph("    B. False")
 

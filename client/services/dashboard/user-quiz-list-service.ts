@@ -13,11 +13,12 @@ interface QuizResponse {
   id: string;
   title: string;
   questionCount: number;
-  quizType: "multiple_choice" | "identification" | "true_false";
+  quizType: "multiple_choice" | "identification" | "true_false" | "mixed";
   createdAt: string;
   questions?: {
     number: number;
     text: string;
+    type: "multiple_choice" | "identification" | "true_false";
     options?: string[] | null;
   }[];
 }
@@ -45,9 +46,10 @@ const QUIZ_TYPE_LABELS: Record<QuizResponse["quizType"], string> = {
   multiple_choice: "Multiple Choice",
   identification: "Identification",
   true_false: "True or False",
+  mixed: "Mixed",
 };
 
-const SERVER_TYPE_TO_LOCAL: Record<QuizResponse["quizType"], QuizQuestionDetail["type"]> = {
+const SERVER_QUESTION_TO_LOCAL: Record<"multiple_choice" | "identification" | "true_false", QuizQuestionDetail["type"]> = {
   multiple_choice: "mcq",
   true_false: "tf",
   identification: "identification",
@@ -77,7 +79,7 @@ export async function getQuizDetail(id: string): Promise<QuizDetail> {
     questions: (response.questions ?? []).map((q) => ({
       number: q.number,
       text: q.text,
-      type: SERVER_TYPE_TO_LOCAL[response.quizType],
+      type: SERVER_QUESTION_TO_LOCAL[q.type],
       options: q.options ?? undefined,
     })),
   };
@@ -102,11 +104,18 @@ export interface QuestionCheckResult {
   correct: boolean;
 }
 
+export interface SectionScore {
+  type: string;
+  total: number;
+  correct: number;
+}
+
 export interface CheckQuizResult {
   total: number;
   correct: number;
   percentage: number;
   results: QuestionCheckResult[];
+  sections: SectionScore[];
 }
 
 /** Sends the user's answers to the server, which grades them against the stored answer key. */

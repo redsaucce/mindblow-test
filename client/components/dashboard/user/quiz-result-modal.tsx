@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { CheckCircle2, Download, Loader2, XCircle } from "lucide-react";
 import Modal from "@/components/ui/modal";
 import { downloadQuizzes as downloadQuizzesRequest } from "@/services/dashboard/quiz-download-service";
@@ -46,6 +46,20 @@ export interface QuizResult {
 function fill(template: string, values: Record<string, number>) {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 }
+
+const sectionNames: Record<string, string> = {
+  multiple_choice: "Multiple Choice",
+  true_false: "True or False",
+  identification: "Identification",
+  mcq: "Multiple Choice",
+  tf: "True or False",
+};
+
+const sectionLabels: Record<Question["type"], string> = {
+  mcq: "Multiple Choice",
+  tf: "True or False",
+  identification: "Identification",
+};
 
 function optionsFor(q: Question): string[] {
   return q.type === "tf" ? ["True", "False"] : (q.options ?? []);
@@ -105,6 +119,10 @@ export function QuizResultModal({
   };
 
   const resultFor = (number: number) => results?.results.find((r) => r.number === number);
+
+  // A mixed quiz has more than one question type. Its questions are shown in sections.
+  const hasSections = new Set(questions.map((q) => q.type)).size > 1;
+  const sectionCount = (type: Question["type"]) => questions.filter((q) => q.type === type).length;
 
   const handleCheck = async () => {
     if (!quiz || remaining > 0 || checking) return;
@@ -175,6 +193,15 @@ export function QuizResultModal({
                   total: results.total,
                   percentage: results.percentage,
                 })}
+                {results.sections.length > 1 && (
+                  <ul className="mt-2 flex flex-col gap-0.5 text-xs font-normal text-emerald-900">
+                    {results.sections.map((s) => (
+                      <li key={s.type}>
+                        {sectionNames[s.type] ?? s.type}: {s.correct} of {s.total}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ) : (
               remaining > 0 && (
@@ -242,12 +269,19 @@ export function QuizResultModal({
 
       {quiz && !loading && !loadError && (
         <div className="flex flex-col gap-5 pt-5">
-          {questions.map((q) => {
+          {questions.map((q, index) => {
             const r = resultFor(q.number);
             const name = `${groupId}-q${q.number}`;
             const value = answers[q.number] ?? "";
+            const startsSection = hasSections && (index === 0 || questions[index - 1].type !== q.type);
             return (
-              <fieldset key={q.number} className="flex flex-col gap-2">
+              <Fragment key={q.number}>
+                {startsSection && (
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 pt-2">
+                    {sectionLabels[q.type]} ({sectionCount(q.type)})
+                  </h3>
+                )}
+              <fieldset className="flex flex-col gap-2">
                 <legend className="text-sm font-medium text-slate-900 mb-2">
                   {q.number}. {q.text}
                 </legend>
@@ -304,6 +338,7 @@ export function QuizResultModal({
                   </div>
                 )}
               </fieldset>
+              </Fragment>
             );
           })}
         </div>

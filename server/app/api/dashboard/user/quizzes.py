@@ -12,6 +12,7 @@ from app.schemas.quiz import (
     CheckQuizRequest,
     CheckQuizResponse,
     DeleteQuizResponse,
+    QuizFormat,
     QuizListResponse,
     QuizResponse,
     QuizType,
@@ -66,11 +67,17 @@ async def get_quizzes(
 @router.post("", response_model=QuizResponse, dependencies=[Depends(verify_csrf)])
 async def create_quiz(
     file: list[UploadFile] = File(...),
-    quizType: QuizType = Form(...),
+    quizType: QuizFormat = Form(...),
     questionCount: int = Form(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if quizType == "mixed":
+        if not 30 <= questionCount <= 60:
+            raise HTTPException(status_code=400, detail="A mixed quiz has 30 to 60 questions.")
+    elif not 25 <= questionCount <= 50:
+        raise HTTPException(status_code=400, detail="A quiz has 25 to 50 questions.")
+
     quiz = await generate_quiz(
         db,
         user_id=str(user.id),
@@ -178,7 +185,7 @@ async def get_quiz_by_id(
             {
                 "number": q.question_order,
                 "text": q.question_text,
-                "type": quiz.quiz_type,
+                "type": q.question_type or quiz.quiz_type,
                 "options": q.options,
             }
             for q in questions

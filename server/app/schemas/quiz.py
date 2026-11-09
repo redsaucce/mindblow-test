@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 QuizType = Literal["multiple_choice", "identification", "true_false"]
+QuizFormat = Literal["multiple_choice", "identification", "true_false", "mixed"]
 
 
 class QuestionResponse(BaseModel):
@@ -29,7 +30,7 @@ class QuizResponse(BaseModel):
     id: str
     title: str
     questionCount: int
-    quizType: QuizType
+    quizType: QuizFormat
     createdAt: datetime
     direction: str | None = None
     questions: list[QuestionPublic] | None = None
@@ -60,8 +61,15 @@ class QuestionResult(BaseModel):
     correct: bool
 
 
+class SectionScore(BaseModel):
+    type: QuizType
+    total: int
+    correct: int
+
+
 class CheckQuizResponse(BaseModel):
     total: int
     correct: int
     percentage: int
     results: list[QuestionResult]
+    sections: list[SectionScore]

@@ -24,3 +24,6 @@ class QuizQuestion(Base):
     options: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     correct_answer: Mapped[str] = mapped_column(String, nullable=False)
     question_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    # The type of this question. Set for every new question; null on older quizzes,
+    # where the quiz's own type applies.
+    question_type: Mapped[str | None] = mapped_column(String(32), nullable=True)

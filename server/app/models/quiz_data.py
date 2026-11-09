@@ -16,6 +16,15 @@ class QuizType(str, enum.Enum):
     TRUE_FALSE = "true_false"
 
 
+class QuizFormat(str, enum.Enum):
+    """The format of a quiz. Mixed quizzes have questions of all three types."""
+
+    MULTIPLE_CHOICE = "multiple_choice"
+    IDENTIFICATION = "identification"
+    TRUE_FALSE = "true_false"
+    MIXED = "mixed"
+
+
 class Quiz(Base):
     __tablename__ = "quizzes"
     __table_args__ = (
@@ -32,8 +41,8 @@ class Quiz(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     direction: Mapped[str | None] = mapped_column(String, nullable=True)
     question_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    quiz_type: Mapped[QuizType] = mapped_column(
-        SAEnum(QuizType, name="quiz_type", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+    quiz_type: Mapped[QuizFormat] = mapped_column(
+        SAEnum(QuizFormat, name="quiz_type", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(

@@ -1,6 +1,6 @@
 import { apiClient, ApiError } from "@/services/api-client";
 
-export type QuizTypeInput = "multiple_choice" | "identification" | "true_false";
+export type QuizTypeInput = "multiple_choice" | "identification" | "true_false" | "mixed";
 
 interface QuestionResponse {
   number: number;

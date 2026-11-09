@@ -34,6 +34,7 @@ const copy = {
       { value: "mcq", label: "Multiple Choice" },
       { value: "tf", label: "True or False" },
       { value: "identification", label: "Identification" },
+      { value: "mixed", label: "Mixed" },
     ],
   },
   quantity: {
@@ -41,6 +42,11 @@ const copy = {
     hint: "min 25 · max 50",
     min: 25,
     max: 50,
+  },
+  quantityMixed: {
+    hint: "min 30 · max 60",
+    min: 30,
+    max: 60,
   },
   generateLabel: "Generate Quiz",
   generatingDialog: {
@@ -67,12 +73,14 @@ const QUIZ_TYPE_TO_SERVER: Record<string, QuizTypeInput> = {
   mcq: "multiple_choice",
   tf: "true_false",
   identification: "identification",
+  mixed: "mixed",
 };
 
 const SERVER_TYPE_TO_LABEL: Record<QuizTypeInput, string> = {
   multiple_choice: "Multiple Choice",
   true_false: "True or False",
   identification: "Identification",
+  mixed: "Mixed",
 };
 
 /**
@@ -152,6 +160,18 @@ export default function Home() {
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState(copy.errorDialog.description);
   const [canRetry, setCanRetry] = useState(true);
+
+  // Mixed quizzes have their own count range, 30 to 60. Single types keep 25 to 50.
+  const quantityRange = quizType === "mixed" ? copy.quantityMixed : copy.quantity;
+
+  // Choosing a type clamps the count into that type's range.
+  const selectQuizType = (value: string) => {
+    setQuizType(value);
+    const range = value === "mixed" ? copy.quantityMixed : copy.quantity;
+    const clamped = Math.min(range.max, Math.max(range.min, quantity));
+    setQuantity(clamped);
+    setQuantityInput(String(clamped));
+  };
 
   const isValidType = (f: File) => {
     // Some systems report an empty or unexpected MIME type for valid DOCX
@@ -258,7 +278,7 @@ export default function Home() {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col gap-6 w-full max-w-2xl">
           <div
-            className={`rounded-2xl min-h-40 transition-all duration-200 ${
+            className={`rounded-2xl ${files.length === 0 ? "h-40" : "min-h-40"} transition-all duration-200 ${
               files.length === 0
                 ? "bg-transparent border-2 border-dashed border-slate-300"
                 : "bg-white border border-slate-200 shadow-sm"
@@ -367,7 +387,7 @@ export default function Home() {
                       name="quizType"
                       value={value}
                       checked={quizType === value}
-                      onChange={() => setQuizType(value)}
+                      onChange={() => selectQuizType(value)}
                       className="sr-only"
                     />
                     <span
@@ -392,7 +412,7 @@ export default function Home() {
                 <label className="text-sm font-semibold text-slate-700">
                   {copy.quantity.label}
                 </label>
-                <span className="text-xs text-slate-400">{copy.quantity.hint}</span>
+                <span className="text-xs text-slate-400">{quantityRange.hint}</span>
               </div>
               <input
                 type="text"
@@ -408,10 +428,10 @@ export default function Home() {
                 onBlur={() => {
                   const parsed = parseInt(quantityInput, 10);
                   const clamped = Number.isNaN(parsed)
-                    ? copy.quantity.min
+                    ? quantityRange.min
                     : Math.min(
-                        copy.quantity.max,
-                        Math.max(copy.quantity.min, parsed)
+                        quantityRange.max,
+                        Math.max(quantityRange.min, parsed)
                       );
                   setQuantity(clamped);
                   setQuantityInput(String(clamped));
